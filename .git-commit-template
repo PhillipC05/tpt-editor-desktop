@@ -1,0 +1,40 @@
+# TPT Asset Editor Desktop - Commit Message Template
+#
+# Format: <type>(<scope>): <subject>
+#
+# Types:
+#   feat:     A new feature
+#   fix:      A bug fix
+#   docs:     Documentation only changes
+#   style:    Changes that do not affect the meaning of the code
+#   refactor: A code change that neither fixes a bug nor adds a feature
+#   perf:     A code change that improves performance
+#   test:     Adding missing tests or correcting existing tests
+#   build:    Changes that affect the build system or external dependencies
+#   ci:       Changes to our CI configuration files and scripts
+#   chore:    Other changes that don't modify src or test files
+#   revert:   Reverts a previous commit
+#
+# Scope: The scope could be anything specifying place of the commit change.
+#        For example: core, ui, generators, utils, tests, docs, etc.
+#
+# Subject: Concise description of the changes (50 chars max)
+#
+# Body: More detailed explanation of the change (optional)
+#       - Explain what and why vs. how
+#       - Use imperative mood (Add, Fix, Update, Remove)
+#
+# Footer: Reference issues or breaking changes (optional)
+#         - Closes #123
+#         - BREAKING CHANGE: description
+#
+# Examples:
+#   feat(generators): add pixel art generator with customizable palettes
+#   fix(ui): resolve memory leak in canvas rendering
+#   docs(api): update JSDoc for service coordinator methods
+#   refactor(utils): extract common validation logic to shared module
+#   perf(core): optimize asset loading with lazy initialization
+#   test(generators): add unit tests for sprite generation pipeline
+#   build(deps): update electron to version 25.0.0
+#   style(ui): format CSS with consistent spacing and indentation
+#   chore(tools): add pre-commit hooks for code quality checks

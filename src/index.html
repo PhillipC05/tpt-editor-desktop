@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPT Asset Editor - Desktop</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Application Container -->
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="app-title">
+                    <i class="fas fa-palette"></i>
+                    TPT Asset Editor
+                </h1>
+                <span class="app-version">Desktop v1.0.0</span>
+            </div>
+
+            <div class="header-center">
+                <div class="search-container">
+                    <input type="text" id="global-search" placeholder="Search assets..." class="search-input">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <button id="new-asset-btn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    New Asset
+                </button>
+                <button id="settings-btn" class="btn btn-secondary">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <ul>
+                        <li class="nav-item active" data-view="dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </li>
+                        <li class="nav-item" data-view="generator">
+                            <i class="fas fa-magic"></i>
+                            <span>Asset Generator</span>
+                        </li>
+                        <li class="nav-item" data-view="library">
+                            <i class="fas fa-images"></i>
+                            <span>Asset Library</span>
+                        </li>
+                        <li class="nav-item" data-view="batch">
+                            <i class="fas fa-tasks"></i>
+                            <span>Batch Processor</span>
+                        </li>
+                        <li class="nav-item" data-view="templates">
+                            <i class="fas fa-file-code"></i>
+                            <span>Templates</span>
+                        </li>
+                        <li class="nav-item" data-view="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Quick Stats -->
+                <div class="sidebar-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-assets">0</div>
+                        <div class="stat-label">Total Assets</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="today-generated">0</div>
+                        <div class="stat-label">Generated Today</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Panel -->
+            <div class="content-panel">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="view active">
+                    <div class="view-header">
+                        <h2>Dashboard</h2>
+                        <p>Welcome to TPT Asset Editor Desktop</p>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <!-- Quick Actions -->
+                        <div class="dashboard-card">
+                            <h3>Quick Actions</h3>
+                            <div class="action-buttons">
+                                <button class="action-btn" data-action="generate-character">
+                                    <i class="fas fa-user-ninja"></i>
+                                    <span>Character</span>
+                                </button>
+                                <button class="action-btn" data-action="generate-monster">
+                                    <i class="fas fa-dragon"></i>
+                                    <span>Monster</span>
+                                </button>
+                                <button class="action-btn" data-action="generate-item">
+                                    <i class="fas fa-gem"></i>
+                                    <span>Item</span>
+                                </button>
+                                <button class="action-btn" data-action="generate-tile">
+                                    <i class="fas fa-th-large"></i>
+                                    <span>Tile</span>
+                                </button>
+                                <button class="action-btn" data-action="generate-sfx">
+                                    <i class="fas fa-volume-up"></i>
+                                    <span>Sound Effect</span>
+                                </button>
+                                <button class="action-btn" data-action="generate-music">
+                                    <i class="fas fa-music"></i>
+                                    <span>Music</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Assets -->
+                        <div class="dashboard-card">
+                            <h3>Recent Assets</h3>
+                            <div id="recent-assets" class="asset-grid">
+                                <div class="empty-state">
+                                    <i class="fas fa-images"></i>
+                                    <p>No assets generated yet</p>
+                                    <button class="btn btn-primary" onclick="switchView('generator')">Generate Your First Asset</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generation Stats -->
+                        <div class="dashboard-card">
+                            <h3>Generation Statistics</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-characters">0</div>
+                                    <div class="stat-label">Characters</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-monsters">0</div>
+                                    <div class="stat-label">Monsters</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-items">0</div>
+                                    <div class="stat-label">Items</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-tiles">0</div>
+                                    <div class="stat-label">Tiles</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-sfx">0</div>
+                                    <div class="stat-label">SFX</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="stat-music">0</div>
+                                    <div class="stat-label">Music</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Generator View -->
+                <div id="generator-view" class="view">
+                    <div class="view-header">
+                        <h2>Asset Generator</h2>
+                        <p>Create new assets using procedural generation</p>
+                    </div>
+
+                    <div class="generator-container">
+                        <!-- Asset Type Selection -->
+                        <div class="generator-section">
+                            <h3>Select Asset Type</h3>
+                            <div class="asset-type-grid">
+                                <!-- Visual Assets -->
+                                <button class="asset-type-btn" data-type="character">
+                                    <i class="fas fa-user-ninja"></i>
+                                    <span>Character</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="monster">
+                                    <i class="fas fa-dragon"></i>
+                                    <span>Monster</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="item">
+                                    <i class="fas fa-gem"></i>
+                                    <span>Item</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="tile">
+                                    <i class="fas fa-th-large"></i>
+                                    <span>Tile</span>
+                                </button>
+
+                                <!-- Audio Assets -->
+                                <button class="asset-type-btn" data-type="sfx">
+                                    <i class="fas fa-volume-up"></i>
+                                    <span>Sound Effect</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="music">
+                                    <i class="fas fa-music"></i>
+                                    <span>Music</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="ambient">
+                                    <i class="fas fa-wind"></i>
+                                    <span>Ambient</span>
+                                </button>
+
+                                <!-- Vehicle Assets -->
+                                <button class="asset-type-btn" data-type="vehicle">
+                                    <i class="fas fa-car"></i>
+                                    <span>Vehicle</span>
+                                </button>
+
+                                <!-- Building Assets -->
+                                <button class="asset-type-btn" data-type="building">
+                                    <i class="fas fa-home"></i>
+                                    <span>Building</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="building-house">
+                                    <i class="fas fa-house-user"></i>
+                                    <span>House</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="building-castle">
+                                    <i class="fas fa-chess-rook"></i>
+                                    <span>Castle</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="building-shop">
+                                    <i class="fas fa-store"></i>
+                                    <span>Shop</span>
+                                </button>
+                                <button class="asset-type-btn" data-type="building-tower">
+                                    <i class="fas fa-chess-rook"></i>
+                                    <span>Tower</span>
+                                </button>
+
+                                <!-- Particle Assets -->
+                                <button class="asset-type-btn" data-type="particle">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Particles</span>
+                                </button>
+
+                                <!-- UI Assets -->
+                                <button class="asset-type-btn" data-type="ui">
+                                    <i class="fas fa-mouse-pointer"></i>
+                                    <span>UI Elements</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Type Selection (shown when vehicle is selected) -->
+                        <div id="vehicle-type-panel" class="generator-section hidden">
+                            <h3>Vehicle Type Selection</h3>
+                            <div class="vehicle-type-grid">
+                                <button class="vehicle-type-btn active" data-vehicle-type="car">
+                                    <i class="fas fa-car"></i>
+                                    <span>Automobile</span>
+                                    <small>Sedan, SUV, Truck</small>
+                                </button>
+                                <button class="vehicle-type-btn" data-vehicle-type="motorcycle">
+                                    <i class="fas fa-motorcycle"></i>
+                                    <span>Motorcycle</span>
+                                    <small>Sport, Cruiser, Off-road</small>
+                                </button>
+                                <button class="vehicle-type-btn" data-vehicle-type="spaceship">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>Spaceship</span>
+                                    <small>Fighter, Freighter, Explorer</small>
+                                </button>
+                                <button class="vehicle-type-btn" data-vehicle-type="boat">
+                                    <i class="fas fa-ship"></i>
+                                    <span>Boat</span>
+                                    <small>Speedboat, Yacht, Submarine</small>
+                                </button>
+                                <button class="vehicle-type-btn" data-vehicle-type="aircraft">
+                                    <i class="fas fa-plane"></i>
+                                    <span>Aircraft</span>
+                                    <small>Jet, Propeller, Helicopter</small>
+                                </button>
+                                <button class="vehicle-type-btn" data-vehicle-type="tank">
+                                    <i class="fas fa-chess-rook"></i>
+                                    <span>Military Vehicle</span>
+                                    <small>Tank, APC, Mech Suit</small>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Building Type Selection (shown when building is selected) -->
+                        <div id="building-type-panel" class="generator-section hidden">
+                            <h3>Building Type Selection</h3>
+                            <div class="building-category-tabs">
+                                <button class="category-tab active" data-category="residential">
+                                    <i class="fas fa-home"></i>
+                                    Residential
+                                </button>
+                                <button class="category-tab" data-category="commercial">
+                                    <i class="fas fa-store"></i>
+                                    Commercial
+                                </button>
+                                <button class="category-tab" data-category="industrial">
+                                    <i class="fas fa-industry"></i>
+                                    Industrial
+                                </button>
+                                <button class="category-tab" data-category="military">
+                                    <i class="fas fa-shield-alt"></i>
+                                    Military
+                                </button>
+                                <button class="category-tab" data-category="religious">
+                                    <i class="fas fa-church"></i>
+                                    Religious
+                                </button>
+                                <button class="category-tab" data-category="infrastructure">
+                                    <i class="fas fa-road"></i>
+                                    Infrastructure
+                                </button>
+                            </div>
+
+                            <div id="building-types-grid" class="building-types-grid">
+                                <!-- Residential Buildings -->
+                                <div class="building-types-category active" data-category="residential">
+                                    <button class="building-type-btn" data-building-type="house">
+                                        <i class="fas fa-house-user"></i>
+                                        <span>House</span>
+                                        <small>Single-family home</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="cottage">
+                                        <i class="fas fa-home"></i>
+                                        <span>Cottage</span>
+                                        <small>Small countryside home</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="mansion">
+                                        <i class="fas fa-hotel"></i>
+                                        <span>Mansion</span>
+                                        <small>Large estate home</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="apartment">
+                                        <i class="fas fa-building"></i>
+                                        <span>Apartment</span>
+                                        <small>Multi-unit building</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="townhouse">
+                                        <i class="fas fa-house-damage"></i>
+                                        <span>Townhouse</span>
+                                        <small>Attached homes</small>
+                                    </button>
+                                </div>
+
+                                <!-- Commercial Buildings -->
+                                <div class="building-types-category" data-category="commercial">
+                                    <button class="building-type-btn" data-building-type="shop">
+                                        <i class="fas fa-store"></i>
+                                        <span>Shop</span>
+                                        <small>Retail store</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="restaurant">
+                                        <i class="fas fa-utensils"></i>
+                                        <span>Restaurant</span>
+                                        <small>Eating establishment</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="office">
+                                        <i class="fas fa-briefcase"></i>
+                                        <span>Office</span>
+                                        <small>Business building</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="hotel">
+                                        <i class="fas fa-hotel"></i>
+                                        <span>Hotel</span>
+                                        <small>Lodging facility</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="bank">
+                                        <i class="fas fa-university"></i>
+                                        <span>Bank</span>
+                                        <small>Financial institution</small>
+                                    </button>
+                                </div>
+
+                                <!-- Industrial Buildings -->
+                                <div class="building-types-category" data-category="industrial">
+                                    <button class="building-type-btn" data-building-type="factory">
+                                        <i class="fas fa-industry"></i>
+                                        <span>Factory</span>
+                                        <small>Manufacturing plant</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="warehouse">
+                                        <i class="fas fa-warehouse"></i>
+                                        <span>Warehouse</span>
+                                        <small>Storage facility</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="powerplant">
+                                        <i class="fas fa-bolt"></i>
+                                        <span>Power Plant</span>
+                                        <small>Energy facility</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="refinery">
+                                        <i class="fas fa-oil-can"></i>
+                                        <span>Refinery</span>
+                                        <small>Processing plant</small>
+                                    </button>
+                                </div>
+
+                                <!-- Military Buildings -->
+                                <div class="building-types-category" data-category="military">
+                                    <button class="building-type-btn" data-building-type="barracks">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <span>Barracks</span>
+                                        <small>Soldier housing</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="fortress">
+                                        <i class="fas fa-chess-rook"></i>
+                                        <span>Fortress</span>
+                                        <small>Defensive structure</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="watchtower">
+                                        <i class="fas fa-eye"></i>
+                                        <span>Watchtower</span>
+                                        <small>Observation tower</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="castle">
+                                        <i class="fas fa-chess-rook"></i>
+                                        <span>Castle</span>
+                                        <small>Medieval fortress</small>
+                                    </button>
+                                </div>
+
+                                <!-- Religious Buildings -->
+                                <div class="building-types-category" data-category="religious">
+                                    <button class="building-type-btn" data-building-type="church">
+                                        <i class="fas fa-church"></i>
+                                        <span>Church</span>
+                                        <small>Place of worship</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="temple">
+                                        <i class="fas fa-vihara"></i>
+                                        <span>Temple</span>
+                                        <small>Religious temple</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="mosque">
+                                        <i class="fas fa-mosque"></i>
+                                        <span>Mosque</span>
+                                        <small>Islamic place of worship</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="shrine">
+                                        <i class="fas fa-place-of-worship"></i>
+                                        <span>Shrine</span>
+                                        <small>Sacred monument</small>
+                                    </button>
+                                </div>
+
+                                <!-- Infrastructure Buildings -->
+                                <div class="building-types-category" data-category="infrastructure">
+                                    <button class="building-type-btn" data-building-type="bridge">
+                                        <i class="fas fa-archway"></i>
+                                        <span>Bridge</span>
+                                        <small>Transportation structure</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="tunnel">
+                                        <i class="fas fa-archway"></i>
+                                        <span>Tunnel</span>
+                                        <small>Underground passage</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="lighthouse">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <span>Lighthouse</span>
+                                        <small>Navigation aid</small>
+                                    </button>
+                                    <button class="building-type-btn" data-building-type="dam">
+                                        <i class="fas fa-water"></i>
+                                        <span>Dam</span>
+                                        <small>Water control structure</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Panel -->
+                        <div id="config-panel" class="generator-section hidden">
+                            <h3>Configuration</h3>
+                            <div id="config-content">
+                                <div class="empty-state">
+                                    <i class="fas fa-cogs"></i>
+                                    <p>Select an asset type to configure</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Panel -->
+                        <div id="preview-panel" class="generator-section hidden">
+                            <h3>Preview</h3>
+                            <div id="preview-content" class="preview-container">
+                                <div class="empty-state">
+                                    <i class="fas fa-eye"></i>
+                                    <p>Generate an asset to see preview</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="generator-actions">
+                            <button id="generate-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-magic"></i>
+                                Generate Asset
+                            </button>
+                            <button id="regenerate-btn" class="btn btn-secondary" disabled>
+                                <i class="fas fa-redo"></i>
+                                Regenerate
+                            </button>
+                            <button id="save-btn" class="btn btn-success" disabled>
+                                <i class="fas fa-save"></i>
+                                Save Asset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Library View -->
+                <div id="library-view" class="view">
+                    <div class="view-header">
+                        <h2>Asset Library</h2>
+                        <p>Manage and organize your generated assets</p>
+                    </div>
+
+                    <div class="library-controls">
+                        <div class="filter-controls">
+                            <select id="filter-type" class="form-control">
+                                <option value="">All Types</option>
+                                <option value="character">Characters</option>
+                                <option value="monster">Monsters</option>
+                                <option value="item">Items</option>
+                                <option value="tile">Tiles</option>
+                                <option value="sfx">Sound Effects</option>
+                                <option value="music">Music</option>
+                            </select>
+                            <input type="text" id="library-search" placeholder="Search assets..." class="form-control">
+                        </div>
+                        <div class="view-controls">
+                            <button class="view-btn active" data-view="grid">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-btn" data-view="list">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="library-content" class="library-content">
+                        <div class="empty-state">
+                            <i class="fas fa-images"></i>
+                            <p>No assets in library</p>
+                            <button class="btn btn-primary" onclick="switchView('generator')">Generate Your First Asset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Processor View -->
+                <div id="batch-view" class="view">
+                    <div class="view-header">
+                        <h2>Batch Processor</h2>
+                        <p>Process multiple assets simultaneously</p>
+                    </div>
+
+                    <div class="batch-container">
+                        <div class="batch-queue">
+                            <h3>Batch Queue</h3>
+                            <div id="batch-queue-list" class="queue-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-list"></i>
+                                    <p>No assets in batch queue</p>
+                                    <button class="btn btn-primary" onclick="switchView('generator')">Add Assets to Queue</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="batch-controls">
+                            <button id="start-batch-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-play"></i>
+                                Start Batch Processing
+                            </button>
+                            <button id="clear-batch-btn" class="btn btn-secondary" disabled>
+                                <i class="fas fa-trash"></i>
+                                Clear Queue
+                            </button>
+                        </div>
+
+                        <div class="batch-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="batch-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span id="batch-progress-text">Ready to process</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Templates View -->
+                <div id="templates-view" class="view">
+                    <div class="view-header">
+                        <h2>Templates</h2>
+                        <p>Create and manage custom asset templates</p>
+                    </div>
+
+                    <div class="templates-container">
+                        <div class="templates-header">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                New Template
+                            </button>
+                        </div>
+
+                        <div id="templates-list" class="templates-list">
+                            <div class="empty-state">
+                                <i class="fas fa-file-code"></i>
+                                <p>No custom templates</p>
+                                <p class="text-muted">Create templates to define custom asset types with unlimited parameters</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="settings-view" class="view">
+                    <div class="view-header">
+                        <h2>Settings</h2>
+                        <p>Configure TPT Asset Editor Desktop</p>
+                    </div>
+
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>General Settings</h3>
+                            <div class="setting-group">
+                                <label for="max-batch-size">Maximum Batch Size</label>
+                                <input type="number" id="max-batch-size" min="1" max="1000" value="50">
+                                <small>Maximum number of assets to process in a single batch</small>
+                            </div>
+
+                            <div class="setting-group">
+                                <label for="default-quality">Default Quality</label>
+                                <input type="range" id="default-quality" min="0.1" max="1.0" step="0.1" value="0.9">
+                                <small>Default generation quality (0.1 - 1.0)</small>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Export Settings</h3>
+                            <div class="setting-group">
+                                <label>Export Formats</label>
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" name="export-format" value="png" checked> PNG</label>
+                                    <label><input type="checkbox" name="export-format" value="jpg"> JPG</label>
+                                    <label><input type="checkbox" name="export-format" value="webp"> WebP</label>
+                                    <label><input type="checkbox" name="export-format" value="wav" checked> WAV</label>
+                                    <label><input type="checkbox" name="export-format" value="mp3"> MP3</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button id="save-settings-btn" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Save Settings
+                            </button>
+                            <button id="reset-settings-btn" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i>
+                                Reset to Defaults
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="status-text">Ready</span>
+            </div>
+            <div class="status-right">
+                <span id="memory-usage">Memory: -- MB</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span id="loading-text">Generating asset...</span>
+        </div>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modals-container"></div>
+
+    <!-- Scripts -->
+    <script src="../src/tauri-init.js"></script>
+    <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/generator.js"></script>
+    <script src="../assets/js/library.js"></script>
+    <script src="../assets/js/batch.js"></script>
+    <script src="../assets/js/templates.js"></script>
+    <script src="../assets/js/settings.js"></script>
+</body>
+</html>

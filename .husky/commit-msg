@@ -1,0 +1,57 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# TPT Asset Editor Desktop - Commit Message Hook
+# Validates commit message format
+
+COMMIT_MSG_FILE=$1
+
+# Read the commit message
+COMMIT_MSG=$(cat $COMMIT_MSG_FILE)
+
+# Skip validation for merge commits
+if echo "$COMMIT_MSG" | grep -qE "^Merge"; then
+    echo "ℹ️  Skipping commit message validation for merge commit"
+    exit 0
+fi
+
+# Skip validation for revert commits
+if echo "$COMMIT_MSG" | grep -qE "^Revert"; then
+    echo "ℹ️  Skipping commit message validation for revert commit"
+    exit 0
+fi
+
+# Check commit message format: type(scope): subject
+if ! echo "$COMMIT_MSG" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .{1,}"; then
+    echo "❌ Invalid commit message format"
+    echo ""
+    echo "📝 Commit message should follow the format:"
+    echo "   <type>(<scope>): <subject>"
+    echo ""
+    echo "🔧 Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+    echo "📂 Valid scopes: core, ui, generators, utils, tests, docs, etc."
+    echo ""
+    echo "✨ Examples:"
+    echo "   feat(generators): add pixel art generator with customizable palettes"
+    echo "   fix(ui): resolve memory leak in canvas rendering"
+    echo "   docs(api): update JSDoc for service coordinator methods"
+    echo "   refactor(utils): extract common validation logic to shared module"
+    echo ""
+    echo "💡 See .git-commit-template for detailed guidelines"
+    exit 1
+fi
+
+# Check subject line length (should be <= 50 characters for first line)
+SUBJECT_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+if [ ${#SUBJECT_LINE} -gt 72 ]; then
+    echo "⚠️  Subject line is too long (${#SUBJECT_LINE} characters)"
+    echo "💡 Keep subject lines under 72 characters for better readability"
+fi
+
+# Check for proper capitalization (first word should not be all caps unless it's an acronym)
+FIRST_WORD=$(echo "$SUBJECT_LINE" | sed -E 's/^[^:]*: //' | awk '{print $1}')
+if echo "$FIRST_WORD" | grep -qE "^[A-Z]{2,}$" && ! echo "$FIRST_WORD" | grep -qE "^(API|URL|HTTP|HTTPS|JSON|XML|HTML|CSS|JS|TS|ID)$"; then
+    echo "⚠️  First word in subject should not be all caps (unless it's an acronym)"
+fi
+
+echo "✅ Commit message format is valid"

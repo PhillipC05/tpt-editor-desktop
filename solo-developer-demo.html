@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPT Asset Editor - Solo Developer Demo</title>
+    <link rel="stylesheet" href="src/ui/solo-developer-interface.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // Mock Electron API for demo purposes
+        if (typeof window.require === 'undefined') {
+            window.require = function() {
+                return {
+                    app: {
+                        getPath: () => '/mock/path'
+                    }
+                };
+            };
+        }
+
+        // Mock WebSocket for demo
+        if (typeof WebSocket === 'undefined') {
+            window.WebSocket = class MockWebSocket {
+                constructor() {
+                    this.readyState = 1;
+                    setTimeout(() => {
+                        if (this.onopen) this.onopen();
+                    }, 100);
+                }
+                send() {}
+                close() {}
+            };
+        }
+
+        // Mock fetch for demo
+        if (typeof fetch === 'undefined') {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => ({ success: true, data: {} })
+            });
+        }
+    </script>
+
+    <script src="src/core/asset-workflow-manager.js"></script>
+    <script src="src/ui/solo-developer-interface.js"></script>
+
+    <script>
+        // Initialize the solo developer interface
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('app');
+
+            try {
+                // Create and initialize the interface
+                const interface = new SoloDeveloperInterface(container);
+
+                // Wait for initialization
+                await interface.init();
+
+                console.log('🎮 TPT Asset Editor Solo Developer Interface Ready!');
+                console.log('Available features:');
+                console.log('• Quick asset generation with presets');
+                console.log('• Asset pack generation (characters, monsters, items, tiles)');
+                console.log('• Project management and organization');
+                console.log('• Export to Unity, Godot, GameMaker, Phaser');
+                console.log('• Asset search and filtering');
+                console.log('• Real-time statistics and activity tracking');
+
+                // Make interface globally available for debugging
+                window.tptInterface = interface;
+
+            } catch (error) {
+                console.error('Failed to initialize interface:', error);
+                container.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: #ff6b6b;">
+                        <h2>❌ Initialization Failed</h2>
+                        <p>${error.message}</p>
+                        <p>Check the console for more details.</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Demo helper functions
+        window.demoFunctions = {
+            // Quick start guide
+            showQuickStart: () => {
+                console.log(`
+🎮 TPT ASSET EDITOR - SOLO DEVELOPER QUICK START
+================================================
+
+1. CREATE PROJECT:
+   - Click "New Project"
+   - Enter project name (e.g., "My RPG Game")
+   - Select game type (action-rpg, platformer, etc.)
+
+2. GENERATE ASSETS:
+   - Go to "Quick Generate" tab
+   - Click on preset cards (Warrior, Mage, Goblin, etc.)
+   - Assets are automatically saved to your project
+
+3. CREATE ASSET PACKS:
+   - Go to "Asset Packs" tab
+   - Choose from Character Sets, Monster Packs, Item Collections
+   - Generate complete sets with one click
+
+4. MANAGE ASSETS:
+   - Go to "My Assets" tab
+   - View all generated assets
+   - Filter by category (characters, monsters, items, tiles)
+   - Search assets by name
+
+5. EXPORT FOR GAME ENGINES:
+   - Go to "Export" tab
+   - Choose target engine (Unity, Godot, GameMaker, Phaser)
+   - Click "Export" - assets are formatted and ready to import
+
+AVAILABLE PRESETS:
+• Characters: Warrior, Mage, Rogue
+• Monsters: Goblin, Orc, Skeleton
+• Items: Sword, Shield, Potion
+• Tiles: Grass, Stone, Water
+
+ASSET PACKS:
+• Character Set (8 assets): Complete party of heroes
+• Monster Pack (8 assets): Various enemy types and sizes
+• Item Collection (15 assets): Weapons, armor, consumables
+• Tile Set (20 assets): Environment tiles with variations
+
+GAME ENGINE SUPPORT:
+• Unity: PNG sprites with .meta files
+• Godot: PNG sprites with resource files
+• GameMaker: PNG sprites for sprite strips
+• Phaser: PNG sprites with JavaScript loader
+• Generic: PNG sprites with JSON manifest
+
+TIPS FOR SOLO DEVELOPERS:
+• Start with Quick Generate for immediate assets
+• Use Asset Packs for complete game-ready sets
+• Export early and often to test in your game engine
+• Use the Dashboard to track your progress
+• Filter and search to find assets quickly
+
+Happy game developing! 🚀
+                `);
+            },
+
+            // Generate sample project
+            generateSampleProject: async () => {
+                if (!window.tptInterface) return;
+
+                console.log('🎮 Generating sample project...');
+
+                try {
+                    // Create project
+                    const project = await window.tptInterface.getWorkflowManager().createProject({
+                        name: 'Sample RPG Project',
+                        gameType: 'action-rpg'
+                    });
+
+                    console.log('✅ Project created:', project.name);
+
+                    // Generate some assets
+                    const assets = [
+                        { type: 'character', preset: 'warrior' },
+                        { type: 'character', preset: 'mage' },
+                        { type: 'monster', preset: 'goblin' },
+                        { type: 'item', preset: 'sword' },
+                        { type: 'tile', preset: 'grass' }
+                    ];
+
+                    for (const asset of assets) {
+                        await window.tptInterface.generateFromPreset(asset.type, asset.preset);
+                        console.log(`✅ Generated ${asset.type}: ${asset.preset}`);
+                    }
+
+                    console.log('🎉 Sample project ready! Check the "My Assets" tab.');
+
+                } catch (error) {
+                    console.error('❌ Failed to generate sample project:', error);
+                }
+            },
+
+            // Show available generators
+            showGenerators: () => {
+                console.log(`
+🎨 AVAILABLE ASSET GENERATORS
+=============================
+
+SPRITE GENERATORS:
+• Character Generator - Warriors, Mages, Rogues with equipment
+• Monster Generator - Goblins, Orcs, Skeletons, Slimes
+• Item Generator - Weapons, Armor, Consumables, Tools
+• Tile Generator - Grass, Stone, Water, Wood tiles
+• Environment Generator - Trees, Rocks, Buildings
+• UI Generator - Buttons, Panels, Progress Bars
+
+AUDIO GENERATORS:
+• Audio Generator - Sound effects and music
+• Effect Synthesizer - Procedural audio effects
+• Music Composer - Background music generation
+
+LEVEL GENERATORS:
+• Level Generator - Complete level layouts
+• Building Placer - Procedural building placement
+• Environment Composer - Terrain and decoration
+
+SPECIALIZED GENERATORS:
+• Pixel Art Generator - Retro-style sprites
+• Particle Generator - Effects and animations
+• Animation System - Sprite animations
+• Quality Enhancer - AI-powered improvements
+
+USAGE EXAMPLES:
+• Generate hero: generateFromPreset('character', 'warrior')
+• Generate enemies: generateAssetPack('monster-pack')
+• Generate world: generateAssetPack('tile-set')
+• Export to Unity: exportForEngine('unity')
+                `);
+            }
+        };
+
+        // Auto-show quick start after 2 seconds
+        setTimeout(() => {
+            if (window.demoFunctions) {
+                window.demoFunctions.showQuickStart();
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
