@@ -1,13 +1,16 @@
 /**
- * TPT Asset Editor Desktop - File Operations Utilities
- * Common file system operations and utilities
+ * TPT Asset Editor Desktop - Enhanced File Operations Utilities
+ * Common file system operations with advanced I/O optimization
  */
 
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { EventEmitter } = require('events');
+const os = require('os');
 
-class FileOperations {
+class FileOperations extends EventEmitter {
     /**
      * Ensure a directory exists, creating it if necessary
      * @param {string} dirPath - Directory path to ensure
@@ -397,6 +400,485 @@ class FileOperations {
 
         await this.copyFile(filePath, backupPath);
         return backupPath;
+    }
+
+    // ===== ENHANCED I/O OPTIMIZATION METHODS =====
+
+    /**
+     * Stream file content with progress tracking
+     * @param {string} filePath - File path to stream
+     * @param {Object} [options={}] - Streaming options
+     * @param {Function} [options.onProgress] - Progress callback (bytesRead, totalBytes)
+     * @param {Function} [options.onData] - Data chunk callback
+     * @param {number} [options.chunkSize=65536] - Chunk size in bytes
+     * @returns {Promise<Buffer>} Complete file content
+     */
+    static async streamFile(filePath, options = {}) {
+        const stats = await this.getFileStats(filePath);
+        const totalBytes = stats.size;
+        let bytesRead = 0;
+        const chunks = [];
+
+        const { onProgress, onData, chunkSize = 65536 } = options;
+
+        return new Promise((resolve, reject) => {
+            const stream = fsSync.createReadStream(filePath, { highWaterMark: chunkSize });
+
+            stream.on('data', (chunk) => {
+                chunks.push(chunk);
+                bytesRead += chunk.length;
+
+                if (onData) {
+                    onData(chunk, bytesRead, totalBytes);
+                }
+
+                if (onProgress) {
+                    onProgress(bytesRead, totalBytes);
+                }
+            });
+
+            stream.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(buffer);
+            });
+
+            stream.on('error', reject);
+        });
+    }
+
+    /**
+     * Write large file using streaming to prevent memory issues
+     * @param {string} filePath - File path to write
+     * @param {Buffer|Readable} data - Data to write (Buffer or Readable stream)
+     * @param {Object} [options={}] - Write options
+     * @param {Function} [options.onProgress] - Progress callback
+     * @returns {Promise<void>}
+     */
+    static async streamWriteFile(filePath, data, options = {}) {
+        await this.ensureDirectory(path.dirname(filePath));
+
+        const { onProgress } = options;
+
+        return new Promise((resolve, reject) => {
+            const writeStream = fsSync.createWriteStream(filePath);
+
+            let totalBytes = 0;
+            let bytesWritten = 0;
+
+            if (Buffer.isBuffer(data)) {
+                totalBytes = data.length;
+                writeStream.write(data);
+                writeStream.end();
+            } else if (data.pipe) {
+                // Handle Readable stream
+                data.on('data', (chunk) => {
+                    totalBytes += chunk.length;
+                });
+
+                data.pipe(writeStream);
+            } else {
+                reject(new Error('Invalid data type for streaming write'));
+                return;
+            }
+
+            writeStream.on('drain', () => {
+                bytesWritten += writeStream.writableHighWaterMark;
+                if (onProgress && totalBytes > 0) {
+                    onProgress(bytesWritten, totalBytes);
+                }
+            });
+
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+        });
+    }
+
+    /**
+     * Batch file operations for improved performance
+     * @param {Array} operations - Array of operation objects
+     * @param {Object} [options={}] - Batch options
+     * @param {number} [options.concurrency=5] - Max concurrent operations
+     * @param {Function} [options.onProgress] - Progress callback
+     * @returns {Promise<Array>} Results array
+     */
+    static async batchFileOperations(operations, options = {}) {
+        const { concurrency = 5, onProgress } = options;
+        const results = [];
+        let completed = 0;
+
+        // Process operations in batches
+        for (let i = 0; i < operations.length; i += concurrency) {
+            const batch = operations.slice(i, i + concurrency);
+            const batchPromises = batch.map(async (operation, index) => {
+                try {
+                    const result = await this._executeFileOperation(operation);
+                    results[i + index] = { success: true, result, operation };
+                } catch (error) {
+                    results[i + index] = { success: false, error, operation };
+                }
+
+                completed++;
+                if (onProgress) {
+                    onProgress(completed, operations.length);
+                }
+            });
+
+            await Promise.all(batchPromises);
+        }
+
+        return results;
+    }
+
+    /**
+     * Execute individual file operation
+     * @private
+     */
+    static async _executeFileOperation(operation) {
+        const { type, ...params } = operation;
+
+        switch (type) {
+            case 'read':
+                return await this.readFileText(params.filePath, params.encoding);
+            case 'write':
+                return await this.writeFileText(params.filePath, params.content, params.encoding);
+            case 'copy':
+                return await this.copyFile(params.sourcePath, params.destPath);
+            case 'delete':
+                return await this.deleteFile(params.filePath);
+            case 'move':
+                return await this.moveFile(params.oldPath, params.newPath);
+            case 'mkdir':
+                return await this.ensureDirectory(params.dirPath);
+            default:
+                throw new Error(`Unknown operation type: ${type}`);
+        }
+    }
+
+    /**
+     * Get disk usage information
+     * @param {string} [dirPath] - Directory to check (defaults to current working directory)
+     * @returns {Promise<Object>} Disk usage statistics
+     */
+    static async getDiskUsage(dirPath = process.cwd()) {
+        try {
+            const stats = await fs.stat(dirPath);
+            const diskInfo = {
+                path: dirPath,
+                totalSize: 0,
+                fileCount: 0,
+                dirCount: 0,
+                largestFile: { path: '', size: 0 },
+                extensions: new Map(),
+                lastModified: stats.mtime,
+                created: stats.birthtime
+            };
+
+            await this._calculateDiskUsage(dirPath, diskInfo);
+            return diskInfo;
+        } catch (error) {
+            throw new Error(`Failed to get disk usage: ${error.message}`);
+        }
+    }
+
+    /**
+     * Recursively calculate disk usage
+     * @private
+     */
+    static async _calculateDiskUsage(dirPath, diskInfo) {
+        const items = await fs.readdir(dirPath);
+
+        for (const item of items) {
+            const itemPath = path.join(dirPath, item);
+
+            try {
+                const stats = await fs.stat(itemPath);
+
+                if (stats.isDirectory()) {
+                    diskInfo.dirCount++;
+                    await this._calculateDiskUsage(itemPath, diskInfo);
+                } else if (stats.isFile()) {
+                    diskInfo.fileCount++;
+                    diskInfo.totalSize += stats.size;
+
+                    // Track largest file
+                    if (stats.size > diskInfo.largestFile.size) {
+                        diskInfo.largestFile = { path: itemPath, size: stats.size };
+                    }
+
+                    // Track file extensions
+                    const ext = this.getFileExtension(itemPath);
+                    diskInfo.extensions.set(ext, (diskInfo.extensions.get(ext) || 0) + 1);
+                }
+            } catch (error) {
+                // Skip inaccessible files
+                console.warn(`Skipping inaccessible file: ${itemPath}`);
+            }
+        }
+    }
+
+    /**
+     * Monitor disk usage with periodic updates
+     * @param {string} dirPath - Directory to monitor
+     * @param {Object} [options={}] - Monitoring options
+     * @param {number} [options.interval=60000] - Check interval in ms
+     * @param {Function} [options.onUpdate] - Update callback
+     * @param {number} [options.threshold] - Size threshold for alerts
+     * @returns {Object} Monitor control object
+     */
+    static monitorDiskUsage(dirPath, options = {}) {
+        const { interval = 60000, onUpdate, threshold } = options;
+        let lastSize = 0;
+        let isMonitoring = true;
+
+        const checkUsage = async () => {
+            if (!isMonitoring) return;
+
+            try {
+                const usage = await this.getDiskUsage(dirPath);
+
+                if (onUpdate) {
+                    onUpdate(usage);
+                }
+
+                // Check threshold
+                if (threshold && usage.totalSize > threshold) {
+                    this.emit('disk-threshold-exceeded', {
+                        path: dirPath,
+                        currentSize: usage.totalSize,
+                        threshold
+                    });
+                }
+
+                // Track size changes
+                if (lastSize > 0 && usage.totalSize !== lastSize) {
+                    this.emit('disk-usage-changed', {
+                        path: dirPath,
+                        previousSize: lastSize,
+                        currentSize: usage.totalSize,
+                        change: usage.totalSize - lastSize
+                    });
+                }
+
+                lastSize = usage.totalSize;
+
+            } catch (error) {
+                this.emit('disk-monitor-error', { path: dirPath, error: error.message });
+            }
+        };
+
+        // Start monitoring
+        const intervalId = setInterval(checkUsage, interval);
+        checkUsage(); // Initial check
+
+        return {
+            stop: () => {
+                isMonitoring = false;
+                clearInterval(intervalId);
+            },
+            checkNow: checkUsage
+        };
+    }
+
+    /**
+     * Get system disk information
+     * @returns {Promise<Object>} System disk information
+     */
+    static async getSystemDiskInfo() {
+        try {
+            const diskInfo = {
+                platform: os.platform(),
+                totalMemory: os.totalmem(),
+                freeMemory: os.freemem(),
+                cpus: os.cpus().length,
+                arch: os.arch(),
+                tmpdir: os.tmpdir(),
+                homedir: os.homedir()
+            };
+
+            // Get disk space information (platform-specific)
+            if (os.platform() === 'win32') {
+                // Windows disk info
+                const drive = path.parse(process.cwd()).root;
+                diskInfo.currentDrive = drive;
+            } else {
+                // Unix-like systems
+                diskInfo.currentDrive = '/';
+            }
+
+            return diskInfo;
+        } catch (error) {
+            throw new Error(`Failed to get system disk info: ${error.message}`);
+        }
+    }
+
+    /**
+     * Optimize file access patterns with prefetching
+     * @param {string[]} filePaths - Array of file paths to prefetch
+     * @param {Object} [options={}] - Prefetch options
+     * @param {number} [options.concurrency=3] - Max concurrent prefetches
+     * @param {Function} [options.onComplete] - Completion callback
+     * @returns {Promise<Map>} Prefetched file cache
+     */
+    static async prefetchFiles(filePaths, options = {}) {
+        const { concurrency = 3, onComplete } = options;
+        const cache = new Map();
+        let completed = 0;
+
+        for (let i = 0; i < filePaths.length; i += concurrency) {
+            const batch = filePaths.slice(i, i + concurrency);
+            const batchPromises = batch.map(async (filePath) => {
+                try {
+                    const content = await this.readFileBuffer(filePath);
+                    cache.set(filePath, {
+                        content,
+                        size: content.length,
+                        prefetchedAt: Date.now()
+                    });
+                } catch (error) {
+                    console.warn(`Failed to prefetch ${filePath}:`, error.message);
+                }
+
+                completed++;
+                if (onComplete) {
+                    onComplete(completed, filePaths.length);
+                }
+            });
+
+            await Promise.all(batchPromises);
+        }
+
+        return cache;
+    }
+
+    /**
+     * Create memory-mapped file access for large files
+     * @param {string} filePath - File path
+     * @param {Object} [options={}] - Memory mapping options
+     * @returns {Promise<Object>} Memory mapped file interface
+     */
+    static async createMemoryMappedFile(filePath, options = {}) {
+        const stats = await this.getFileStats(filePath);
+        const fileSize = stats.size;
+
+        // For very large files, use streaming instead of full mapping
+        if (fileSize > 100 * 1024 * 1024) { // 100MB threshold
+            return this._createStreamingFileInterface(filePath, options);
+        }
+
+        // For smaller files, load into memory
+        const content = await this.readFileBuffer(filePath);
+
+        return {
+            size: fileSize,
+            read: (offset, length) => content.slice(offset, offset + length),
+            readAll: () => content,
+            close: () => {} // No-op for in-memory files
+        };
+    }
+
+    /**
+     * Create streaming file interface for large files
+     * @private
+     */
+    static async _createStreamingFileInterface(filePath, options) {
+        const stats = await this.getFileStats(filePath);
+        const fileSize = stats.size;
+
+        return {
+            size: fileSize,
+            read: async (offset, length) => {
+                const buffer = Buffer.alloc(length);
+                const fd = await fs.open(filePath, 'r');
+                await fd.read(buffer, 0, length, offset);
+                await fd.close();
+                return buffer;
+            },
+            readAll: () => this.readFileBuffer(filePath),
+            close: () => {} // No-op
+        };
+    }
+
+    /**
+     * Compress file using built-in compression
+     * @param {string} inputPath - Input file path
+     * @param {string} outputPath - Output compressed file path
+     * @param {Object} [options={}] - Compression options
+     * @returns {Promise<Object>} Compression results
+     */
+    static async compressFile(inputPath, outputPath, options = {}) {
+        const zlib = require('zlib');
+        const { algorithm = 'gzip', level = 6 } = options;
+
+        const input = fsSync.createReadStream(inputPath);
+        const output = fsSync.createWriteStream(outputPath);
+
+        const compressor = algorithm === 'gzip' ?
+            zlib.createGzip({ level }) :
+            zlib.createDeflate({ level });
+
+        return new Promise((resolve, reject) => {
+            let originalSize = 0;
+            let compressedSize = 0;
+
+            input.on('data', (chunk) => {
+                originalSize += chunk.length;
+            });
+
+            output.on('finish', async () => {
+                const stats = await fs.stat(outputPath);
+                compressedSize = stats.size;
+
+                resolve({
+                    originalSize,
+                    compressedSize,
+                    ratio: compressedSize / originalSize,
+                    savedBytes: originalSize - compressedSize
+                });
+            });
+
+            input.pipe(compressor).pipe(output).on('error', reject);
+        });
+    }
+
+    /**
+     * Decompress file
+     * @param {string} inputPath - Compressed file path
+     * @param {string} outputPath - Output decompressed file path
+     * @param {Object} [options={}] - Decompression options
+     * @returns {Promise<Object>} Decompression results
+     */
+    static async decompressFile(inputPath, outputPath, options = {}) {
+        const zlib = require('zlib');
+        const { algorithm = 'gzip' } = options;
+
+        const input = fsSync.createReadStream(inputPath);
+        const output = fsSync.createWriteStream(outputPath);
+
+        const decompressor = algorithm === 'gzip' ?
+            zlib.createGunzip() :
+            zlib.createInflate();
+
+        return new Promise((resolve, reject) => {
+            let compressedSize = 0;
+            let decompressedSize = 0;
+
+            input.on('data', (chunk) => {
+                compressedSize += chunk.length;
+            });
+
+            output.on('finish', async () => {
+                const stats = await fs.stat(outputPath);
+                decompressedSize = stats.size;
+
+                resolve({
+                    compressedSize,
+                    decompressedSize,
+                    ratio: decompressedSize / compressedSize
+                });
+            });
+
+            input.pipe(decompressor).pipe(output).on('error', reject);
+        });
     }
 }
 

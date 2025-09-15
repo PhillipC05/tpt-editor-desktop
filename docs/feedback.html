@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPT Asset Editor - Community Feedback</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .feedback-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .rating-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .rating-star {
+            font-size: 24px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .rating-star:hover,
+        .rating-star.active {
+            color: #ffd700;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .submit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .feedback-stats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .recent-feedback {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .feedback-item {
+            border-bottom: 1px solid #e1e5e9;
+            padding: 15px 0;
+        }
+
+        .feedback-item:last-child {
+            border-bottom: none;
+        }
+
+        .feedback-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .feedback-author {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .feedback-date {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .feedback-rating {
+            color: #ffd700;
+            font-size: 1.2em;
+        }
+
+        .feedback-content {
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .feedback-tags {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .header p {
+                font-size: 1em;
+            }
+
+            .feedback-section {
+                padding: 20px;
+            }
+
+            .rating-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .checkbox-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>💬 Community Feedback</h1>
+            <p>Help us improve TPT Asset Editor by sharing your thoughts</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="feedback-stats">
+            <h3>📊 Community Feedback Overview</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">1,247</span>
+                    <span class="stat-label">Total Feedback</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">4.6</span>
+                    <span class="stat-label">Average Rating</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">89%</span>
+                    <span class="stat-label">Positive Feedback</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">156</span>
+                    <span class="stat-label">Features Requested</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="feedback-section">
+            <h2 class="section-title">📝 Share Your Feedback</h2>
+
+            <div id="message-container"></div>
+
+            <form id="feedback-form">
+                <div class="form-group">
+                    <label for="feedback-type">Feedback Type *</label>
+                    <select id="feedback-type" required>
+                        <option value="">Select feedback type...</option>
+                        <option value="general">General Feedback</option>
+                        <option value="bug">Bug Report</option>
+                        <option value="feature">Feature Request</option>
+                        <option value="performance">Performance Issue</option>
+                        <option value="documentation">Documentation Issue</option>
+                        <option value="usability">Usability Feedback</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Name (Optional)</label>
+                    <input type="text" id="name" placeholder="Your name or username">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email (Optional)</label>
+                    <input type="email" id="email" placeholder="your.email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Overall Rating *</label>
+                    <div class="rating-group">
+                        <span>Rate your experience:</span>
+                        <div class="rating-stars">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                        <span id="rating-text">No rating</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject *</label>
+                    <input type="text" id="subject" placeholder="Brief summary of your feedback" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" placeholder="Please provide detailed feedback..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>What aspects are you providing feedback on?</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-ui" value="user-interface">
+                            <label for="aspect-ui">User Interface</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-performance" value="performance">
+                            <label for="aspect-performance">Performance</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-features" value="features">
+                            <label for="aspect-features">Features</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-documentation" value="documentation">
+                            <label for="aspect-documentation">Documentation</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-audio" value="audio">
+                            <label for="aspect-audio">Audio Generation</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-sprites" value="sprites">
+                            <label for="aspect-sprites">Sprite Generation</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-plugins" value="plugins">
+                            <label for="aspect-plugins">Plugin System</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="aspect-other" value="other">
+                            <label for="aspect-other">Other</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="priority">Priority Level</label>
+                    <select id="priority">
+                        <option value="low">Low - Nice to have</option>
+                        <option value="medium" selected>Medium - Should be addressed</option>
+                        <option value="high">High - Important issue</option>
+                        <option value="critical">Critical - Blocks my work</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="environment">Environment Details (Optional)</label>
+                    <textarea id="environment" placeholder="OS version, TPT Asset Editor version, browser, etc."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">🚀 Submit Feedback</button>
+            </form>
+        </div>
+
+        <div class="recent-feedback">
+            <h2 class="section-title">💭 Recent Community Feedback</h2>
+
+            <div id="recent-feedback-list">
+                <div class="loading">Loading recent feedback...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample feedback data - in a real implementation, this would come from a backend
+        const sampleFeedback = [
+            {
+                id: 1,
+                author: "GameDev_Pro",
+                rating: 5,
+                type: "feature",
+                subject: "Love the new audio features!",
+                message: "The new FM synthesis is amazing! It really helps create more realistic sound effects for my game.",
+                aspects: ["audio", "features"],
+                date: "2025-01-15",
+                priority: "medium"
+            },
+            {
+                id: 2,
+                author: "IndieArtist",
+                rating: 4,
+                type: "general",
+                subject: "Great tool for rapid prototyping",
+                message: "TPT Asset Editor has significantly sped up my asset creation workflow. The batch processing is a game-changer!",
+                aspects: ["performance", "features"],
+                date: "2025-01-14",
+                priority: "low"
+            },
+            {
+                id: 3,
+                author: "CodeWizard",
+                rating: 5,
+                type: "documentation",
+                subject: "API documentation could be improved",
+                message: "The API reference is good but could use more code examples. Would love to see more practical use cases.",
+                aspects: ["documentation"],
+                date: "2025-01-13",
+                priority: "medium"
+            },
+            {
+                id: 4,
+                author: "PixelMaster",
+                rating: 4,
+                type: "usability",
+                subject: "Interface suggestions",
+                message: "The UI is intuitive, but adding keyboard shortcuts for common actions would improve workflow efficiency.",
+                aspects: ["user-interface"],
+                date: "2025-01-12",
+                priority: "medium"
+            }
+        ];
+
+        let currentRating = 0;
+
+        // Initialize rating system
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRatingSystem();
+            loadRecentFeedback();
+
+            // Form submission
+            document.getElementById('feedback-form').addEventListener('submit', handleFeedbackSubmission);
+        });
+
+        function initializeRatingSystem() {
+            const stars = document.querySelectorAll('.rating-star');
+            const ratingText = document.getElementById('rating-text');
+
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    setRating(rating);
+                });
+
+                star.addEventListener('mouseover', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    highlightStars(rating);
+                });
+
+                star.addEventListener('mouseout', function() {
+                    highlightStars(currentRating);
+                });
+            });
+
+            function setRating(rating) {
+                currentRating = rating;
+                highlightStars(rating);
+                updateRatingText(rating);
+            }
+
+            function highlightStars(rating) {
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.classList.add('active');
+                    } else {
+                        star.classList.remove('active');
+                    }
+                });
+            }
+
+            function updateRatingText(rating) {
+                const texts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+                ratingText.textContent = texts[rating] || 'No rating';
+            }
+        }
+
+        function handleFeedbackSubmission(event) {
+            event.preventDefault();
+
+            const formData = {
+                type: document.getElementById('feedback-type').value,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                rating: currentRating,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value,
+                aspects: getSelectedAspects(),
+                priority: document.getElementById('priority').value,
+                environment: document.getElementById('environment').value,
+                timestamp: new Date().toISOString()
+            };
+
+            // Validate required fields
+            if (!formData.type || !formData.subject || !formData.message || !formData.rating) {
+                showMessage('Please fill in all required fields.', 'error');
+                return;
+            }
+
+            // Simulate form submission
+            showMessage('Submitting feedback...', 'info');
+
+            setTimeout(() => {
+                // In a real implementation, this would send data to a backend
+                console.log('Feedback submitted:', formData);
+                showMessage('Thank you for your feedback! We appreciate your input.', 'success');
+                document.getElementById('feedback-form').reset();
+                currentRating = 0;
+                initializeRatingSystem();
+            }, 1500);
+        }
+
+        function getSelectedAspects() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function showMessage(message, type) {
+            const container = document.getElementById('message-container');
+            const messageClass = type === 'error' ? 'error-message' :
+                               type === 'success' ? 'success-message' : 'info-message';
+
+            container.innerHTML = `<div class="${messageClass}">${message}</div>`;
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        function loadRecentFeedback() {
+            const container = document.getElementById('recent-feedback-list');
+
+            setTimeout(() => {
+                const feedbackHTML = sampleFeedback.map(feedback => createFeedbackHTML(feedback)).join('');
+                container.innerHTML = feedbackHTML;
+            }, 1000);
+        }
+
+        function createFeedbackHTML(feedback) {
+            const ratingStars = '★'.repeat(feedback.rating) + '☆'.repeat(5 - feedback.rating);
+            const aspectTags = feedback.aspects.map(aspect => `<span class="tag">${aspect}</span>`).join('');
+
+            return `
+                <div class="feedback-item">
+                    <div class="feedback-header">
+                        <span class="feedback-author">${feedback.author}</span>
+                        <div>
+                            <span class="feedback-rating">${ratingStars}</span>
+                            <span class="feedback-date">${formatDate(feedback.date)}</span>
+                        </div>
+                    </div>
+                    <div class="feedback-content">
+                        <strong>${feedback.subject}</strong><br>
+                        ${feedback.message}
+                    </div>
+                    <div class="feedback-tags">
+                        ${aspectTags}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Add some CSS for the info message type
+        const style = document.createElement('style');
+        style.textContent = `
+            .info-message {
+                background: #d1ecf1;
+                color: #0c5460;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                border: 1px solid #bee5eb;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

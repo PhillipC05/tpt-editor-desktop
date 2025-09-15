@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPT Asset Editor Documentation Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            font-size: 18px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: #5a6fd8;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e1e5e9;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sort-btn {
+            padding: 5px 10px;
+            border: 1px solid #e1e5e9;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .sort-btn:hover,
+        .sort-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .result-item {
+            border-bottom: 1px solid #e1e5e9;
+            padding: 20px 0;
+            transition: background 0.3s ease;
+        }
+
+        .result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .result-category {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .result-file {
+            color: #666;
+        }
+
+        .result-snippet {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .no-results h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .suggestions {
+            margin-top: 20px;
+        }
+
+        .suggestion-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .suggestion-list li {
+            margin-bottom: 5px;
+        }
+
+        .suggestion-list a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .suggestion-list a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .search-tips {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-tips h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .search-tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .search-tips li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .header p {
+                font-size: 1em;
+            }
+
+            .search-container {
+                padding: 20px;
+            }
+
+            #search-input {
+                font-size: 16px;
+            }
+
+            .filters {
+                gap: 10px;
+            }
+
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .sort-options {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>📚 Documentation Search</h1>
+            <p>Find what you need in the TPT Asset Editor documentation</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search documentation..." autocomplete="off">
+                <button class="search-button" id="search-button">🔍</button>
+            </div>
+
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="tutorials">Tutorials</button>
+                <button class="filter-btn" data-filter="api">API</button>
+                <button class="filter-btn" data-filter="guides">Guides</button>
+                <button class="filter-btn" data-filter="reference">Reference</button>
+            </div>
+        </div>
+
+        <div class="search-tips">
+            <h4>💡 Search Tips</h4>
+            <ul>
+                <li>Use quotes for exact phrases: <code>"batch processing"</code></li>
+                <li>Search for specific terms: <code>generator</code>, <code>export</code>, <code>plugin</code></li>
+                <li>Find tutorials: <code>tutorial audio</code> or <code>getting started</code></li>
+                <li>API references: <code>API generate</code> or <code>class AssetGenerator</code></li>
+            </ul>
+        </div>
+
+        <div class="results-container">
+            <div id="results">
+                <div class="no-results">
+                    <h3>Start Your Search</h3>
+                    <p>Enter a search term above to find relevant documentation</p>
+                    <div class="suggestions">
+                        <p>Popular searches:</p>
+                        <ul class="suggestion-list">
+                            <li><a href="#" onclick="performSearch('getting started')">Getting Started</a></li>
+                            <li><a href="#" onclick="performSearch('batch processing')">Batch Processing</a></li>
+                            <li><a href="#" onclick="performSearch('audio generation')">Audio Generation</a></li>
+                            <li><a href="#" onclick="performSearch('plugin development')">Plugin Development</a></li>
+                            <li><a href="#" onclick="performSearch('troubleshooting')">Troubleshooting</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Documentation index - in a real implementation, this would be generated dynamically
+        const documentationIndex = [
+            {
+                title: "Getting Started with TPT Asset Editor",
+                file: "tutorials/getting-started.md",
+                category: "tutorials",
+                content: "Welcome to the TPT Asset Editor Desktop - your comprehensive toolkit for procedural game asset generation. This guide covers installation, basic usage, and core features.",
+                url: "tutorials/getting-started.html"
+            },
+            {
+                title: "Sprite Generation Basics",
+                file: "tutorials/sprite-generation-basics.md",
+                category: "tutorials",
+                content: "Learn the fundamentals of generating sprites with TPT Asset Editor. Understanding sprite generators, parameter controls, and generation workflow.",
+                url: "tutorials/sprite-generation-basics.html"
+            },
+            {
+                title: "User Manual - Complete Guide",
+                file: "user-manual.md",
+                category: "guides",
+                content: "Comprehensive user manual covering all aspects of TPT Asset Editor. Installation, features, tutorials, troubleshooting, and reference materials.",
+                url: "user-manual.html"
+            },
+            {
+                title: "API Reference",
+                file: "api-reference.md",
+                category: "api",
+                content: "Complete API documentation for TPT Asset Editor. Core classes, generator APIs, plugin system, asset management, and technical references.",
+                url: "api-reference.html"
+            },
+            {
+                title: "Frequently Asked Questions",
+                file: "faq.md",
+                category: "reference",
+                content: "Common questions and answers about TPT Asset Editor. Installation issues, generation problems, performance optimization, and troubleshooting.",
+                url: "faq.html"
+            },
+            {
+                title: "Keyboard Shortcuts Reference",
+                file: "keyboard-shortcuts.md",
+                category: "reference",
+                content: "Complete list of keyboard shortcuts for TPT Asset Editor. General shortcuts, file operations, generation controls, and customization options.",
+                url: "keyboard-shortcuts.html"
+            },
+            {
+                title: "Contribution Guidelines",
+                file: "contribution-guidelines.md",
+                category: "guides",
+                content: "Guidelines for contributing to TPT Asset Editor. Code standards, testing, documentation, and pull request process.",
+                url: "contribution-guidelines.html"
+            },
+            {
+                title: "Video Tutorial Scripts",
+                file: "video-tutorials.md",
+                category: "guides",
+                content: "Scripts and production guides for video tutorials. Complete tutorial series covering all aspects of TPT Asset Editor usage.",
+                url: "video-tutorials.html"
+            },
+            {
+                title: "Deployment Guide",
+                file: "deployment/QUICK-START.md",
+                category: "guides",
+                content: "Quick start guide for deploying TPT Asset Editor. Installation instructions and basic setup for all platforms.",
+                url: "deployment/quick-start.html"
+            },
+            {
+                title: "Troubleshooting Guide",
+                file: "deployment/TROUBLESHOOTING.md",
+                category: "reference",
+                content: "Comprehensive troubleshooting guide for TPT Asset Editor. Common issues, solutions, and advanced debugging techniques.",
+                url: "deployment/troubleshooting.html"
+            }
+        ];
+
+        let currentFilter = 'all';
+        let currentSort = 'relevance';
+
+        // DOM elements
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const resultsContainer = document.getElementById('results');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const sortButtons = document.querySelectorAll('.sort-btn');
+
+        // Event listeners
+        searchInput.addEventListener('input', debounce(handleSearch, 300));
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+        searchButton.addEventListener('click', handleSearch);
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentFilter = button.dataset.filter;
+                handleSearch();
+            });
+        });
+
+        sortButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                sortButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentSort = button.dataset.sort;
+                handleSearch();
+            });
+        });
+
+        // Search functions
+        function handleSearch() {
+            const query = searchInput.value.trim().toLowerCase();
+            if (query.length === 0) {
+                showNoResults();
+                return;
+            }
+
+            showLoading();
+
+            setTimeout(() => {
+                const results = performSearch(query);
+                displayResults(results, query);
+            }, 200); // Simulate search delay
+        }
+
+        function performSearch(query) {
+            let results = documentationIndex.filter(item => {
+                // Filter by category
+                if (currentFilter !== 'all' && item.category !== currentFilter) {
+                    return false;
+                }
+
+                // Search in title, content, and file
+                const searchText = `${item.title} ${item.content} ${item.file}`.toLowerCase();
+                return searchText.includes(query);
+            });
+
+            // Sort results
+            results.sort((a, b) => {
+                if (currentSort === 'relevance') {
+                    // Simple relevance scoring
+                    const aScore = calculateRelevanceScore(a, query);
+                    const bScore = calculateRelevanceScore(b, query);
+                    return bScore - aScore;
+                } else if (currentSort === 'title') {
+                    return a.title.localeCompare(b.title);
+                } else if (currentSort === 'category') {
+                    return a.category.localeCompare(b.category);
+                }
+                return 0;
+            });
+
+            return results;
+        }
+
+        function calculateRelevanceScore(item, query) {
+            let score = 0;
+            const title = item.title.toLowerCase();
+            const content = item.content.toLowerCase();
+
+            // Title matches are most important
+            if (title.includes(query)) {
+                score += 10;
+                // Exact title match gets bonus
+                if (title === query) score += 5;
+            }
+
+            // Content matches
+            if (content.includes(query)) {
+                score += 5;
+            }
+
+            // Category relevance
+            if (item.category === currentFilter) {
+                score += 2;
+            }
+
+            return score;
+        }
+
+        function displayResults(results, query) {
+            if (results.length === 0) {
+                showNoResults(query);
+                return;
+            }
+
+            const resultsHTML = `
+                <div class="results-header">
+                    <div class="results-count">Found ${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"</div>
+                    <div class="sort-options">
+                        <button class="sort-btn active" data-sort="relevance">Relevance</button>
+                        <button class="sort-btn" data-sort="title">Title</button>
+                        <button class="sort-btn" data-sort="category">Category</button>
+                    </div>
+                </div>
+                ${results.map(result => createResultHTML(result, query)).join('')}
+            `;
+
+            resultsContainer.innerHTML = resultsHTML;
+
+            // Re-attach sort event listeners
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentSort = button.dataset.sort;
+                    handleSearch();
+                });
+            });
+        }
+
+        function createResultHTML(result, query) {
+            const highlightedTitle = highlightText(result.title, query);
+            const highlightedSnippet = createSnippet(result.content, query);
+
+            return `
+                <div class="result-item">
+                    <a href="${result.url}" class="result-title">${highlightedTitle}</a>
+                    <div class="result-meta">
+                        <span class="result-category">${result.category}</span>
+                        <span class="result-file">${result.file}</span>
+                    </div>
+                    <div class="result-snippet">${highlightedSnippet}</div>
+                </div>
+            `;
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function createSnippet(content, query) {
+            if (!query) return content.substring(0, 200) + '...';
+
+            const index = content.toLowerCase().indexOf(query.toLowerCase());
+            if (index === -1) return content.substring(0, 200) + '...';
+
+            const start = Math.max(0, index - 100);
+            const end = Math.min(content.length, index + 100);
+            let snippet = content.substring(start, end);
+
+            if (start > 0) snippet = '...' + snippet;
+            if (end < content.length) snippet = snippet + '...';
+
+            return highlightText(snippet, query);
+        }
+
+        function showLoading() {
+            resultsContainer.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Searching documentation...</p>
+                </div>
+            `;
+        }
+
+        function showNoResults(query = '') {
+            const suggestionsHTML = query ? `
+                <div class="suggestions">
+                    <p>Try these suggestions:</p>
+                    <ul class="suggestion-list">
+                        <li><a href="#" onclick="performSearch('${query} tutorial')">Search for "${query}" in tutorials</a></li>
+                        <li><a href="#" onclick="performSearch('${query} guide')">Search for "${query}" in guides</a></li>
+                        <li><a href="#" onclick="performSearch('${query} api')">Search for "${query}" in API docs</a></li>
+                        <li><a href="#" onclick="performSearch('troubleshooting')">Check troubleshooting guide</a></li>
+                        <li><a href="#" onclick="performSearch('faq')">Browse FAQ</a></li>
+                    </ul>
+                </div>
+            ` : '';
+
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <h3>No Results Found</h3>
+                    <p>${query ? `No documentation found for "${query}"` : 'Enter a search term to find documentation'}</p>
+                    ${suggestionsHTML}
+                </div>
+            `;
+        }
+
+        // Utility functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Global function for suggestions
+        window.performSearch = function(query) {
+            searchInput.value = query;
+            handleSearch();
+        };
+
+        // Initialize sort buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentSort = button.dataset.sort;
+                    handleSearch();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

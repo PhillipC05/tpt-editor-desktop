@@ -1,574 +1,715 @@
 /**
- * TPT Preset Manager
- * Manages generation presets, templates, and user configurations
+ * Preset Manager
+ * Handles saving, loading, and managing parameter presets for generators
  */
 
-const fs = require('fs').promises;
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const UserPreferences = require('../core/user-preferences');
 
 class PresetManager {
-    constructor() {
-        this.presets = {};
-        this.templates = {};
-        this.userPresets = {};
-        this.communityPresets = {};
-        this.presetCategories = {};
+    constructor(options = {}) {
+        this.preferences = options.preferences || new UserPreferences();
+        this.presets = new Map();
+        this.categories = new Map();
+        this.tags = new Set();
+        this.currentGenerator = null;
+        this.eventListeners = new Map();
+
+        this.init();
     }
 
     /**
-     * Initialize preset manager
+     * Initialize the preset manager
      */
-    async initialize() {
-        await this.loadPresets();
-        await this.loadTemplates();
-        await this.loadUserPresets();
-        await this.initializeDefaultPresets();
+    async init() {
+        await this.preferences.init();
+        this.loadPresets();
+        this.setupEventListeners();
+
+        console.log('Preset manager initialized');
     }
 
     /**
-     * Load built-in presets
+     * Setup event listeners
      */
-    async loadPresets() {
-        try {
-            const presetsPath = path.join(process.cwd(), 'src/presets');
-            const presetFiles = await fs.readdir(presetsPath);
+    setupEventListeners() {
+        // Listen for generator changes
+        document.addEventListener('generator-changed', (e) => {
+            this.setCurrentGenerator(e.detail?.generatorId);
+        });
 
-            for (const file of presetFiles) {
-                if (file.endsWith('.json')) {
-                    const presetData = await fs.readFile(path.join(presetsPath, file), 'utf8');
-                    const preset = JSON.parse(presetData);
-                    this.presets[preset.id] = preset;
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load presets:', error);
-        }
+        // Listen for parameter changes to track unsaved changes
+        document.addEventListener('parameter-changed', (e) => {
+            this.markAsModified();
+        });
     }
 
     /**
-     * Load project templates
+     * Set current generator
      */
-    async loadTemplates() {
-        try {
-            const templatesPath = path.join(process.cwd(), 'src/templates');
-            const templateFiles = await fs.readdir(templatesPath);
-
-            for (const file of templateFiles) {
-                if (file.endsWith('.json')) {
-                    const templateData = await fs.readFile(path.join(templatesPath, file), 'utf8');
-                    const template = JSON.parse(templateData);
-                    this.templates[template.id] = template;
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load templates:', error);
-        }
+    setCurrentGenerator(generatorId) {
+        this.currentGenerator = generatorId;
+        this.emit('generator-changed', { generatorId });
     }
 
     /**
-     * Load user-created presets
+     * Save current parameters as a preset
      */
-    async loadUserPresets() {
-        try {
-            const userPresetsPath = path.join(process.cwd(), 'user-presets.json');
-            const userPresetsData = await fs.readFile(userPresetsPath, 'utf8');
-            this.userPresets = JSON.parse(userPresetsData);
-        } catch (error) {
-            // Initialize empty user presets
-            this.userPresets = {};
-        }
-    }
-
-    /**
-     * Save user presets
-     */
-    async saveUserPresets() {
-        try {
-            const userPresetsPath = path.join(process.cwd(), 'user-presets.json');
-            await fs.writeFile(userPresetsPath, JSON.stringify(this.userPresets, null, 2));
-        } catch (error) {
-            console.error('Failed to save user presets:', error);
-        }
-    }
-
-    /**
-     * Initialize default presets for common use cases
-     */
-    async initializeDefaultPresets() {
-        const defaultPresets = {
-            // Character presets
-            'warrior-basic': {
-                id: 'warrior-basic',
-                name: 'Basic Warrior',
-                category: 'character',
-                generator: 'character-generator',
-                parameters: {
-                    characterClass: 'warrior',
-                    level: 1,
-                    style: 'pixel',
-                    theme: 'medieval',
-                    equipment: ['sword', 'shield']
-                },
-                tags: ['warrior', 'basic', 'medieval'],
-                created: new Date().toISOString(),
-                usage: 0
-            },
-
-            'mage-powerful': {
-                id: 'mage-powerful',
-                name: 'Powerful Mage',
-                category: 'character',
-                generator: 'character-generator',
-                parameters: {
-                    characterClass: 'mage',
-                    level: 10,
-                    style: 'pixel',
-                    theme: 'fantasy',
-                    equipment: ['staff', 'robe']
-                },
-                tags: ['mage', 'powerful', 'fantasy'],
-                created: new Date().toISOString(),
-                usage: 0
-            },
-
-            // Environment presets
-            'forest-clearing': {
-                id: 'forest-clearing',
-                name: 'Forest Clearing',
-                category: 'environment',
-                generator: 'level-generator',
-                parameters: {
-                    levelType: 'forest',
-                    width: 32,
-                    height: 24,
-                    theme: 'natural',
-                    difficulty: 'normal'
-                },
-                tags: ['forest', 'nature', 'outdoor'],
-                created: new Date().toISOString(),
-                usage: 0
-            },
-
-            'dungeon-crypt': {
-                id: 'dungeon-crypt',
-                name: 'Ancient Crypt',
-                category: 'environment',
-                generator: 'level-generator',
-                parameters: {
-                    levelType: 'dungeon',
-                    width: 40,
-                    height: 30,
-                    theme: 'dark',
-                    difficulty: 'hard'
-                },
-                tags: ['dungeon', 'crypt', 'underground'],
-                created: new Date().toISOString(),
-                usage: 0
-            },
-
-            // Item presets
-            'sword-legendary': {
-                id: 'sword-legendary',
-                name: 'Legendary Sword',
-                category: 'item',
-                generator: 'weapon-generator',
-                parameters: {
-                    weaponType: 'sword',
-                    material: 'mithril',
-                    enchantment: 'fire_damage',
-                    quality: 'legendary'
-                },
-                tags: ['sword', 'legendary', 'enchanted'],
-                created: new Date().toISOString(),
-                usage: 0
-            },
-
-            // Pixel art presets
-            'pixel-landscape': {
-                id: 'pixel-landscape',
-                name: 'Pixel Landscape',
-                category: 'pixel-art',
-                generator: 'pixel-art-generator',
-                parameters: {
-                    artType: 'landscape',
-                    width: 256,
-                    height: 192,
-                    style: 'pixel',
-                    theme: 'natural'
-                },
-                tags: ['landscape', 'pixel', 'nature'],
-                created: new Date().toISOString(),
-                usage: 0
-            }
-        };
-
-        // Add default presets if they don't exist
-        for (const [presetId, preset] of Object.entries(defaultPresets)) {
-            if (!this.userPresets[presetId]) {
-                this.userPresets[presetId] = preset;
-            }
+    async savePreset(name, options = {}) {
+        if (!this.currentGenerator) {
+            throw new Error('No generator selected');
         }
 
-        await this.saveUserPresets();
-    }
+        const parameters = this.getCurrentParameters();
+        if (!parameters || Object.keys(parameters).length === 0) {
+            throw new Error('No parameters to save');
+        }
 
-    /**
-     * Create a new preset
-     */
-    async createPreset(name, category, generator, parameters, tags = []) {
         const preset = {
-            id: uuidv4(),
-            name: name,
-            category: category,
-            generator: generator,
-            parameters: parameters,
-            tags: tags,
-            created: new Date().toISOString(),
-            usage: 0,
-            isUserCreated: true
+            id: this.generatePresetId(),
+            name: name.trim(),
+            generatorId: this.currentGenerator,
+            parameters: { ...parameters },
+            category: options.category || 'user',
+            tags: options.tags || [],
+            createdAt: new Date().toISOString(),
+            modifiedAt: new Date().toISOString(),
+            usageCount: 0,
+            rating: 0,
+            isFavorite: false,
+            description: options.description || '',
+            thumbnail: options.thumbnail || null
         };
 
-        this.userPresets[preset.id] = preset;
-        await this.saveUserPresets();
+        // Validate preset
+        this.validatePreset(preset);
+
+        // Save to storage
+        this.presets.set(preset.id, preset);
+
+        // Add to category
+        if (!this.categories.has(preset.category)) {
+            this.categories.set(preset.category, []);
+        }
+        this.categories.get(preset.category).push(preset.id);
+
+        // Add tags
+        preset.tags.forEach(tag => this.tags.add(tag));
+
+        // Save to preferences
+        await this.savePresetsToStorage();
+
+        this.emit('preset-saved', { preset });
+        this.showNotification(`Preset "${name}" saved successfully`, 'success');
 
         return preset;
     }
 
     /**
-     * Update existing preset
+     * Load a preset
      */
-    async updatePreset(presetId, updates) {
-        if (!this.userPresets[presetId]) {
-            throw new Error('Preset not found');
+    async loadPreset(presetId) {
+        const preset = this.presets.get(presetId);
+        if (!preset) {
+            throw new Error(`Preset '${presetId}' not found`);
         }
 
-        this.userPresets[presetId] = {
-            ...this.userPresets[presetId],
-            ...updates,
-            modified: new Date().toISOString()
-        };
+        // Check if generator matches
+        if (preset.generatorId !== this.currentGenerator) {
+            const confirmed = confirm(`This preset is for ${preset.generatorId}. Load it anyway?`);
+            if (!confirmed) return;
+        }
 
-        await this.saveUserPresets();
-        return this.userPresets[presetId];
+        // Apply parameters
+        await this.applyPresetParameters(preset.parameters);
+
+        // Update usage statistics
+        preset.usageCount++;
+        preset.lastUsedAt = new Date().toISOString();
+        await this.savePresetsToStorage();
+
+        this.emit('preset-loaded', { preset });
+        this.showNotification(`Preset "${preset.name}" loaded`, 'info');
+
+        return preset;
     }
 
     /**
-     * Delete preset
+     * Delete a preset
      */
     async deletePreset(presetId) {
-        if (!this.userPresets[presetId]) {
-            throw new Error('Preset not found');
+        const preset = this.presets.get(presetId);
+        if (!preset) {
+            throw new Error(`Preset '${presetId}' not found`);
         }
 
-        delete this.userPresets[presetId];
-        await this.saveUserPresets();
-        return true;
+        // Confirm deletion
+        const confirmed = confirm(`Delete preset "${preset.name}"? This action cannot be undone.`);
+        if (!confirmed) return;
+
+        // Remove from storage
+        this.presets.delete(presetId);
+
+        // Remove from category
+        const categoryPresets = this.categories.get(preset.category) || [];
+        const index = categoryPresets.indexOf(presetId);
+        if (index > -1) {
+            categoryPresets.splice(index, 1);
+        }
+
+        // Clean up empty categories
+        if (categoryPresets.length === 0) {
+            this.categories.delete(preset.category);
+        }
+
+        // Save changes
+        await this.savePresetsToStorage();
+
+        this.emit('preset-deleted', { presetId, preset });
+        this.showNotification(`Preset "${preset.name}" deleted`, 'info');
     }
 
     /**
-     * Get preset by ID
+     * Update a preset
      */
-    getPreset(presetId) {
-        return this.userPresets[presetId] || this.presets[presetId];
+    async updatePreset(presetId, updates) {
+        const preset = this.presets.get(presetId);
+        if (!preset) {
+            throw new Error(`Preset '${presetId}' not found`);
+        }
+
+        // Update preset
+        Object.assign(preset, updates, {
+            modifiedAt: new Date().toISOString()
+        });
+
+        // Handle category changes
+        if (updates.category && updates.category !== preset.category) {
+            // Remove from old category
+            const oldCategoryPresets = this.categories.get(preset.category) || [];
+            const index = oldCategoryPresets.indexOf(presetId);
+            if (index > -1) {
+                oldCategoryPresets.splice(index, 1);
+            }
+
+            // Add to new category
+            if (!this.categories.has(updates.category)) {
+                this.categories.set(updates.category, []);
+            }
+            this.categories.get(updates.category).push(presetId);
+        }
+
+        // Handle tag changes
+        if (updates.tags) {
+            updates.tags.forEach(tag => this.tags.add(tag));
+        }
+
+        // Validate updated preset
+        this.validatePreset(preset);
+
+        // Save changes
+        await this.savePresetsToStorage();
+
+        this.emit('preset-updated', { preset });
+        this.showNotification(`Preset "${preset.name}" updated`, 'success');
+
+        return preset;
+    }
+
+    /**
+     * Get presets for current generator
+     */
+    getPresetsForCurrentGenerator() {
+        if (!this.currentGenerator) return [];
+
+        return Array.from(this.presets.values())
+            .filter(preset => preset.generatorId === this.currentGenerator)
+            .sort((a, b) => {
+                // Sort by favorite, then by usage count, then by name
+                if (a.isFavorite && !b.isFavorite) return -1;
+                if (!a.isFavorite && b.isFavorite) return 1;
+                if (a.usageCount !== b.usageCount) return b.usageCount - a.usageCount;
+                return a.name.localeCompare(b.name);
+            });
     }
 
     /**
      * Get presets by category
      */
     getPresetsByCategory(category) {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        return Object.values(allPresets).filter(preset => preset.category === category);
+        const categoryPresetIds = this.categories.get(category) || [];
+        return categoryPresetIds.map(id => this.presets.get(id)).filter(Boolean);
     }
 
     /**
-     * Get presets by generator
+     * Get presets by tags
      */
-    getPresetsByGenerator(generator) {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        return Object.values(allPresets).filter(preset => preset.generator === generator);
+    getPresetsByTags(tags) {
+        return Array.from(this.presets.values())
+            .filter(preset => tags.some(tag => preset.tags.includes(tag)));
     }
 
     /**
-     * Search presets by name or tags
+     * Search presets
      */
-    searchPresets(query) {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        const lowerQuery = query.toLowerCase();
+    searchPresets(query, options = {}) {
+        const { category, tags, generatorId } = options;
 
-        return Object.values(allPresets).filter(preset => {
-            return preset.name.toLowerCase().includes(lowerQuery) ||
-                   preset.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
-        });
+        return Array.from(this.presets.values())
+            .filter(preset => {
+                // Filter by generator if specified
+                if (generatorId && preset.generatorId !== generatorId) return false;
+
+                // Filter by category if specified
+                if (category && preset.category !== category) return false;
+
+                // Filter by tags if specified
+                if (tags && tags.length > 0) {
+                    if (!tags.some(tag => preset.tags.includes(tag))) return false;
+                }
+
+                // Search by query
+                if (query) {
+                    const searchTerm = query.toLowerCase();
+                    return preset.name.toLowerCase().includes(searchTerm) ||
+                           preset.description.toLowerCase().includes(searchTerm) ||
+                           preset.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                }
+
+                return true;
+            })
+            .sort((a, b) => {
+                // Sort by relevance if searching
+                if (query) {
+                    const aScore = this.calculateSearchScore(a, query);
+                    const bScore = this.calculateSearchScore(b, query);
+                    return bScore - aScore;
+                }
+
+                // Default sort
+                if (a.isFavorite && !b.isFavorite) return -1;
+                if (!a.isFavorite && b.isFavorite) return 1;
+                return b.usageCount - a.usageCount;
+            });
     }
 
     /**
-     * Get popular presets
+     * Calculate search relevance score
      */
-    getPopularPresets(limit = 10) {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        return Object.values(allPresets)
-            .sort((a, b) => b.usage - a.usage)
-            .slice(0, limit);
-    }
+    calculateSearchScore(preset, query) {
+        const searchTerm = query.toLowerCase();
+        let score = 0;
 
-    /**
-     * Increment preset usage
-     */
-    async incrementPresetUsage(presetId) {
-        const preset = this.userPresets[presetId] || this.presets[presetId];
-        if (preset) {
-            preset.usage = (preset.usage || 0) + 1;
-            if (this.userPresets[presetId]) {
-                await this.saveUserPresets();
+        // Name match (highest weight)
+        if (preset.name.toLowerCase().includes(searchTerm)) {
+            score += 10;
+            if (preset.name.toLowerCase().startsWith(searchTerm)) score += 5;
+        }
+
+        // Description match
+        if (preset.description.toLowerCase().includes(searchTerm)) {
+            score += 3;
+        }
+
+        // Tag match
+        preset.tags.forEach(tag => {
+            if (tag.toLowerCase().includes(searchTerm)) {
+                score += 2;
             }
-        }
-    }
-
-    /**
-     * Export preset
-     */
-    exportPreset(presetId) {
-        const preset = this.getPreset(presetId);
-        if (!preset) {
-            throw new Error('Preset not found');
-        }
-
-        return JSON.stringify(preset, null, 2);
-    }
-
-    /**
-     * Import preset
-     */
-    async importPreset(presetJson) {
-        try {
-            const preset = JSON.parse(presetJson);
-
-            // Validate preset structure
-            if (!preset.id || !preset.name || !preset.category) {
-                throw new Error('Invalid preset format');
-            }
-
-            // Generate new ID to avoid conflicts
-            preset.id = uuidv4();
-            preset.imported = new Date().toISOString();
-            preset.isImported = true;
-
-            this.userPresets[preset.id] = preset;
-            await this.saveUserPresets();
-
-            return preset;
-        } catch (error) {
-            throw new Error('Failed to import preset: ' + error.message);
-        }
-    }
-
-    /**
-     * Create project template
-     */
-    async createTemplate(name, description, presetIds, settings = {}) {
-        const template = {
-            id: uuidv4(),
-            name: name,
-            description: description,
-            presetIds: presetIds,
-            settings: settings,
-            created: new Date().toISOString(),
-            usage: 0,
-            isUserCreated: true
-        };
-
-        this.templates[template.id] = template;
-        await this.saveTemplates();
-
-        return template;
-    }
-
-    /**
-     * Get template by ID
-     */
-    getTemplate(templateId) {
-        return this.templates[templateId];
-    }
-
-    /**
-     * Get all templates
-     */
-    getAllTemplates() {
-        return Object.values(this.templates);
-    }
-
-    /**
-     * Apply template to project
-     */
-    async applyTemplate(templateId) {
-        const template = this.getTemplate(templateId);
-        if (!template) {
-            throw new Error('Template not found');
-        }
-
-        const appliedPresets = [];
-        for (const presetId of template.presetIds) {
-            const preset = this.getPreset(presetId);
-            if (preset) {
-                appliedPresets.push(preset);
-                await this.incrementPresetUsage(presetId);
-            }
-        }
-
-        // Increment template usage
-        template.usage = (template.usage || 0) + 1;
-        await this.saveTemplates();
-
-        return {
-            template: template,
-            appliedPresets: appliedPresets
-        };
-    }
-
-    /**
-     * Save templates
-     */
-    async saveTemplates() {
-        try {
-            const templatesPath = path.join(process.cwd(), 'user-templates.json');
-            await fs.writeFile(templatesPath, JSON.stringify(this.templates, null, 2));
-        } catch (error) {
-            console.error('Failed to save templates:', error);
-        }
-    }
-
-    /**
-     * Load templates
-     */
-    async loadTemplates() {
-        try {
-            const templatesPath = path.join(process.cwd(), 'user-templates.json');
-            const templatesData = await fs.readFile(templatesPath, 'utf8');
-            const loadedTemplates = JSON.parse(templatesData);
-
-            // Merge with built-in templates
-            this.templates = { ...this.templates, ...loadedTemplates };
-        } catch (error) {
-            // Use built-in templates only
-        }
-    }
-
-    /**
-     * Get preset categories
-     */
-    getPresetCategories() {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        const categories = {};
-
-        Object.values(allPresets).forEach(preset => {
-            if (!categories[preset.category]) {
-                categories[preset.category] = [];
-            }
-            categories[preset.category].push(preset);
         });
 
-        return categories;
+        // Usage bonus
+        score += Math.min(preset.usageCount, 5);
+
+        // Favorite bonus
+        if (preset.isFavorite) score += 3;
+
+        return score;
+    }
+
+    /**
+     * Toggle favorite status
+     */
+    async toggleFavorite(presetId) {
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+
+        preset.isFavorite = !preset.isFavorite;
+        await this.savePresetsToStorage();
+
+        this.emit('preset-favorite-toggled', { presetId, isFavorite: preset.isFavorite });
+    }
+
+    /**
+     * Rate a preset
+     */
+    async ratePreset(presetId, rating) {
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+
+        preset.rating = Math.max(0, Math.min(5, rating));
+        await this.savePresetsToStorage();
+
+        this.emit('preset-rated', { presetId, rating: preset.rating });
+    }
+
+    /**
+     * Export presets
+     */
+    exportPresets(presetIds = null) {
+        const presetsToExport = presetIds
+            ? presetIds.map(id => this.presets.get(id)).filter(Boolean)
+            : Array.from(this.presets.values());
+
+        const exportData = {
+            version: '1.0.0',
+            exportedAt: new Date().toISOString(),
+            presets: presetsToExport,
+            categories: Array.from(this.categories.entries()),
+            tags: Array.from(this.tags)
+        };
+
+        return JSON.stringify(exportData, null, 2);
+    }
+
+    /**
+     * Import presets
+     */
+    async importPresets(jsonData) {
+        try {
+            const importData = JSON.parse(jsonData);
+
+            if (!importData.presets || !Array.isArray(importData.presets)) {
+                throw new Error('Invalid preset data format');
+            }
+
+            let importedCount = 0;
+            const conflicts = [];
+
+            for (const preset of importData.presets) {
+                // Generate new ID to avoid conflicts
+                const originalId = preset.id;
+                preset.id = this.generatePresetId();
+
+                // Check for name conflicts
+                const existingPreset = Array.from(this.presets.values())
+                    .find(p => p.name === preset.name && p.generatorId === preset.generatorId);
+
+                if (existingPreset) {
+                    conflicts.push({
+                        imported: preset,
+                        existing: existingPreset,
+                        originalId
+                    });
+                    continue;
+                }
+
+                // Validate and add preset
+                this.validatePreset(preset);
+                this.presets.set(preset.id, preset);
+
+                // Add to category
+                if (!this.categories.has(preset.category)) {
+                    this.categories.set(preset.category, []);
+                }
+                this.categories.get(preset.category).push(preset.id);
+
+                // Add tags
+                preset.tags.forEach(tag => this.tags.add(tag));
+
+                importedCount++;
+            }
+
+            await this.savePresetsToStorage();
+
+            this.emit('presets-imported', { importedCount, conflicts });
+
+            if (conflicts.length > 0) {
+                this.showNotification(`${importedCount} presets imported. ${conflicts.length} conflicts found.`, 'warning');
+            } else {
+                this.showNotification(`${importedCount} presets imported successfully`, 'success');
+            }
+
+            return { importedCount, conflicts };
+        } catch (error) {
+            console.error('Failed to import presets:', error);
+            this.showNotification('Failed to import presets', 'error');
+            throw error;
+        }
+    }
+
+    /**
+     * Create preset from randomization
+     */
+    async createRandomizedPreset(basePresetId, intensity = 0.3) {
+        const basePreset = this.presets.get(basePresetId);
+        if (!basePreset) {
+            throw new Error(`Base preset '${basePresetId}' not found`);
+        }
+
+        const randomizedParams = this.randomizeParameters(basePreset.parameters, intensity);
+
+        const randomPreset = await this.savePreset(
+            `${basePreset.name} (Random ${Math.round(intensity * 100)}%)`,
+            {
+                category: 'randomized',
+                tags: [...basePreset.tags, 'randomized'],
+                description: `Randomized version of "${basePreset.name}" with ${Math.round(intensity * 100)}% variation`
+            }
+        );
+
+        // Apply the randomized parameters
+        await this.applyPresetParameters(randomizedParams);
+
+        return randomPreset;
+    }
+
+    /**
+     * Randomize parameters
+     */
+    randomizeParameters(parameters, intensity) {
+        const randomized = {};
+
+        for (const [key, value] of Object.entries(parameters)) {
+            if (typeof value === 'number') {
+                // Randomize numeric values
+                const variation = value * intensity;
+                const min = Math.max(0, value - variation);
+                const max = value + variation;
+                randomized[key] = min + Math.random() * (max - min);
+            } else if (typeof value === 'boolean') {
+                // Randomly flip boolean values
+                randomized[key] = Math.random() < intensity ? !value : value;
+            } else if (Array.isArray(value)) {
+                // For arrays, keep original (could be enhanced to randomize selections)
+                randomized[key] = [...value];
+            } else {
+                // Keep other types as-is
+                randomized[key] = value;
+            }
+        }
+
+        return randomized;
     }
 
     /**
      * Get preset statistics
      */
-    getPresetStatistics() {
-        const allPresets = { ...this.presets, ...this.userPresets };
-        const stats = {
-            total: Object.keys(allPresets).length,
-            byCategory: {},
-            byGenerator: {},
-            mostUsed: null,
-            recentlyCreated: null
+    getStatistics() {
+        const total = this.presets.size;
+        const categories = this.categories.size;
+        const tags = this.tags.size;
+        const favorites = Array.from(this.presets.values()).filter(p => p.isFavorite).length;
+        const totalUsage = Array.from(this.presets.values()).reduce((sum, p) => sum + p.usageCount, 0);
+
+        return {
+            total,
+            categories,
+            tags,
+            favorites,
+            totalUsage,
+            averageRating: total > 0
+                ? Array.from(this.presets.values()).reduce((sum, p) => sum + p.rating, 0) / total
+                : 0
         };
-
-        let maxUsage = 0;
-        let mostRecent = null;
-
-        Object.values(allPresets).forEach(preset => {
-            // Category stats
-            stats.byCategory[preset.category] = (stats.byCategory[preset.category] || 0) + 1;
-
-            // Generator stats
-            stats.byGenerator[preset.generator] = (stats.byGenerator[preset.generator] || 0) + 1;
-
-            // Most used
-            if (preset.usage > maxUsage) {
-                maxUsage = preset.usage;
-                stats.mostUsed = preset;
-            }
-
-            // Most recent
-            const created = new Date(preset.created);
-            if (!mostRecent || created > mostRecent) {
-                mostRecent = created;
-                stats.recentlyCreated = preset;
-            }
-        });
-
-        return stats;
     }
 
     /**
-     * Clean up unused presets
+     * Get current parameters from UI
      */
-    async cleanupUnusedPresets(threshold = 0) {
-        const presetsToDelete = [];
+    getCurrentParameters() {
+        // This would integrate with the actual UI to get current parameter values
+        // For now, return a mock implementation
+        const parameters = {};
 
-        Object.entries(this.userPresets).forEach(([id, preset]) => {
-            if ((preset.usage || 0) <= threshold && preset.isUserCreated) {
-                presetsToDelete.push(id);
+        // Get all parameter inputs
+        const inputs = document.querySelectorAll('[data-parameter]');
+        inputs.forEach(input => {
+            const paramName = input.dataset.parameter;
+            let value;
+
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else if (input.type === 'range' || input.type === 'number') {
+                value = parseFloat(input.value);
+            } else if (input.type === 'color') {
+                value = input.value;
+            } else {
+                value = input.value;
+            }
+
+            if (paramName && value !== undefined) {
+                parameters[paramName] = value;
             }
         });
 
-        presetsToDelete.forEach(id => {
-            delete this.userPresets[id];
-        });
+        return parameters;
+    }
 
-        if (presetsToDelete.length > 0) {
-            await this.saveUserPresets();
+    /**
+     * Apply preset parameters to UI
+     */
+    async applyPresetParameters(parameters) {
+        // Apply parameters to UI elements
+        for (const [paramName, value] of Object.entries(parameters)) {
+            const input = document.querySelector(`[data-parameter="${paramName}"]`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = value;
+                } else {
+                    input.value = value;
+                }
+
+                // Trigger change event
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
-        return presetsToDelete.length;
+        // Emit event for other components
+        this.emit('parameters-applied', { parameters });
     }
 
     /**
-     * Backup all presets and templates
+     * Generate unique preset ID
      */
-    async createBackup() {
-        const backup = {
-            presets: this.userPresets,
-            templates: this.templates,
-            timestamp: new Date().toISOString(),
-            version: '1.0'
-        };
-
-        const backupPath = path.join(process.cwd(), `preset-backup-${Date.now()}.json`);
-        await fs.writeFile(backupPath, JSON.stringify(backup, null, 2));
-
-        return backupPath;
+    generatePresetId() {
+        return `preset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
     /**
-     * Restore from backup
+     * Validate preset
      */
-    async restoreFromBackup(backupPath) {
-        try {
-            const backupData = await fs.readFile(backupPath, 'utf8');
-            const backup = JSON.parse(backupData);
-
-            this.userPresets = { ...this.userPresets, ...backup.presets };
-            this.templates = { ...this.templates, ...backup.templates };
-
-            await this.saveUserPresets();
-            await this.saveTemplates();
-
-            return true;
-        } catch (error) {
-            throw new Error('Failed to restore from backup: ' + error.message);
+    validatePreset(preset) {
+        if (!preset.name || preset.name.trim().length === 0) {
+            throw new Error('Preset name is required');
         }
+
+        if (!preset.generatorId) {
+            throw new Error('Generator ID is required');
+        }
+
+        if (!preset.parameters || typeof preset.parameters !== 'object') {
+            throw new Error('Parameters must be an object');
+        }
+
+        if (preset.name.length > 100) {
+            throw new Error('Preset name must be less than 100 characters');
+        }
+
+        if (preset.description && preset.description.length > 500) {
+            throw new Error('Description must be less than 500 characters');
+        }
+    }
+
+    /**
+     * Load presets from storage
+     */
+    loadPresets() {
+        const savedPresets = this.preferences.get('presets', []);
+        const savedCategories = this.preferences.get('presetCategories', []);
+        const savedTags = this.preferences.get('presetTags', []);
+
+        // Load presets
+        savedPresets.forEach(preset => {
+            this.presets.set(preset.id, preset);
+        });
+
+        // Load categories
+        savedCategories.forEach(([category, presetIds]) => {
+            this.categories.set(category, presetIds);
+        });
+
+        // Load tags
+        savedTags.forEach(tag => {
+            this.tags.add(tag);
+        });
+    }
+
+    /**
+     * Save presets to storage
+     */
+    async savePresetsToStorage() {
+        const presetsArray = Array.from(this.presets.values());
+        const categoriesArray = Array.from(this.categories.entries());
+        const tagsArray = Array.from(this.tags);
+
+        await this.preferences.set('presets', presetsArray);
+        await this.preferences.set('presetCategories', categoriesArray);
+        await this.preferences.set('presetTags', tagsArray);
+    }
+
+    /**
+     * Mark current state as modified
+     */
+    markAsModified() {
+        this.emit('parameters-modified', {
+            generatorId: this.currentGenerator,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    /**
+     * Show notification
+     */
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : '#d1ecf1'};
+            color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : '#0c5460'};
+            border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : type === 'warning' ? '#ffeaa7' : '#bee5eb'};
+            border-radius: 4px;
+            z-index: 10001;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+        `;
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    }
+
+    /**
+     * Emit event
+     */
+    emit(eventType, data) {
+        const event = new CustomEvent(`preset-manager-${eventType}`, {
+            detail: data
+        });
+        document.dispatchEvent(event);
+    }
+
+    /**
+     * Destroy the preset manager
+     */
+    destroy() {
+        this.presets.clear();
+        this.categories.clear();
+        this.tags.clear();
+        this.eventListeners.clear();
+
+        console.log('Preset manager destroyed');
     }
 }
 
