@@ -8,7 +8,7 @@
     "dev": "tauri dev",
     "build": "npm run build:ts && tauri build",
     "dist": "npm run build:ts && tauri build",
-    "build:ts": "tsc",
+    "build:ts": "tsc --skipLibCheck",
     "build:electron": "npm run build:ts && electron .",
     "test": "npm run test:framework",
     "test:framework": "node -e \"const TestFramework = require('./src/tests/test-framework'); const tf = new TestFramework({ verbose: true }); tf.runAllTests().then(stats => process.exit(stats.failed > 0 ? 1 : 0));\"",

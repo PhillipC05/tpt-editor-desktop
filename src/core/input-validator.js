@@ -207,8 +207,8 @@ class InputValidator {
                 .replace(/data:(?!image\/)/gi, '');
 
         // Remove dangerous attributes
-        sanitized = sanitized.replace(/<[^>]*\s+(?:on\w+|style|href)\s*=\s*["'][^"']*["'][^>]*>/gi, (match) => {
-            return match.replace(/\s+(?:on\w+|style|href)\s*=\s*["'][^"']*["']/gi, '');
+        sanitized = sanitized.replace(new RegExp('<[^>]*\\s+(?:on\\w+|style|href)\\s*=\\s*["\'][^"\\\'"]*["\'][^>]*>', 'gi'), (match) => {
+            return match.replace(new RegExp('\\s+(?:on\\w+|style|href)\\s*=\\s*["\'][^"\\\'"]*["\']', 'gi'), '');
         });
 
             return sanitized;
@@ -264,7 +264,7 @@ class InputValidator {
         this.securityPatterns.set('sql-injection', [
             /(\b(union|select|insert|update|delete|drop|create|alter)\b.*\b(select|from|where|into)\b)/gi,
             /('|(\\x27)|(\\x2D\\x2D)|(\\/\\*))/gi,
-            /(\\x3B|\\x2D\\x2D|\\x23|\\x2F\\x2A)/gi
+            new RegExp(';', 'gi')
         ]);
 
         // Path traversal patterns
