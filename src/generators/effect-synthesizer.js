@@ -3,8 +3,14 @@
  * Specialized class for generating sound effects
  */
 
-class EffectSynthesizer {
+const BaseGenerator = require('./base-generator');
+
+class EffectSynthesizer extends BaseGenerator {
     constructor(sampleRate = 44100, channels = 1, bitDepth = 16) {
+        super({
+            assetType: 'sound_effect',
+            cacheSize: 50
+        });
         this.sampleRate = sampleRate;
         this.channels = channels;
         this.bitDepth = bitDepth;
