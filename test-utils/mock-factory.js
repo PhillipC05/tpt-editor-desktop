@@ -124,7 +124,13 @@ function createMockDatabase() {
   return {
     prepare: jest.fn((sql) => mockStatement(sql)),
     exec: jest.fn(() => undefined),
-    pragma: jest.fn(() => []),
+    pragma: jest.fn((pragmaString) => {
+      // Return value or execute pragma
+      if (pragmaString && pragmaString.includes('=')) {
+        return undefined; // Setting pragma
+      }
+      return []; // Getting pragma
+    }),
     function: jest.fn(),
     aggregate: jest.fn(),
     table: jest.fn(),
