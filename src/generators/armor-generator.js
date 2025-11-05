@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class ArmorGenerator {
+class ArmorGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'armor',
+            cacheSize: 100
+        });
         this.armorTypes = {
             HELMETS: 'helmets',
             CHEST_ARMOR: 'chest_armor',
@@ -555,6 +560,9 @@ class ArmorGenerator {
      * Generate armor piece
      */
     async generate(options = {}) {
+        // Handle null options
+        if (!options) options = {};
+
         const config = {
             type: options.type || this.armorTypes.CHEST_ARMOR,
             subtype: options.subtype || this.chestArmorTypes.PLATE_ARMOR,
@@ -566,7 +574,7 @@ class ArmorGenerator {
             ...options
         };
 
-        // Get appropriate template based on type
+        // Get appropriate template based on type (with fallbacks)
         let template;
         switch (config.type) {
             case this.armorTypes.HELMETS:
@@ -588,24 +596,34 @@ class ArmorGenerator {
                 template = this.shoulderTemplates[config.subtype];
                 break;
             default:
-                throw new Error(`Unknown armor type: ${config.type}`);
+                // Fallback to chest armor
+                config.type = this.armorTypes.CHEST_ARMOR;
+                config.subtype = this.chestArmorTypes.PLATE_ARMOR;
+                template = this.chestArmorTemplates[config.subtype];
         }
 
         if (!template) {
-            throw new Error(`Unknown armor subtype: ${config.subtype}`);
+            // Fallback to first available chest armor template
+            config.type = this.armorTypes.CHEST_ARMOR;
+            config.subtype = this.chestArmorTypes.PLATE_ARMOR;
+            template = this.chestArmorTemplates[config.subtype];
         }
 
-        // Apply material and quality modifiers
-        const materialProps = this.materialProperties[config.material];
-        const qualityMods = this.qualityModifiers[config.quality];
+        // Apply material and quality modifiers (with fallbacks)
+        const materialProps = this.materialProperties[config.material] || this.materialProperties[this.materials.IRON];
+        const qualityMods = this.qualityModifiers[config.quality] || this.qualityModifiers[this.qualities.COMMON];
 
         // Calculate final stats
+        const calculatedValue = Math.round(20 * qualityMods.valueMultiplier * (materialProps.magicResistance + 1));
+
         const finalStats = {
             defense: Math.round(template.baseDefense * qualityMods.statMultiplier * (materialProps.defense / 10)),
+            baseDefense: template.baseDefense, // Add baseDefense for compatibility
             durability: Math.round(materialProps.durability * qualityMods.durabilityMultiplier),
             weight: Math.round(template.weight * materialProps.weight * (config.size === this.sizes.SMALL ? 0.7 : config.size === this.sizes.LARGE ? 1.3 : 1.0)),
             magicResistance: Math.round(materialProps.magicResistance * qualityMods.statMultiplier),
-            value: Math.round(20 * qualityMods.valueMultiplier * (materialProps.magicResistance + 1)),
+            value: calculatedValue,
+            totalValue: calculatedValue, // Add totalValue alias for compatibility
             coverage: template.coverage || 0.8,
             mobilityPenalty: (template.mobilityPenalty || 0) * materialProps.weight,
             visibilityPenalty: template.visibilityPenalty || 0
@@ -632,9 +650,22 @@ class ArmorGenerator {
         // Generate sprite image
         const spriteImage = await this.generateArmorSprite(armorData, config);
 
+        // Convert Jimp image to Buffer for compatibility
+        let imageBuffer;
+        try {
+            if (spriteImage && typeof spriteImage.getBufferAsync === 'function') {
+                imageBuffer = await spriteImage.getBufferAsync(Jimp.MIME_PNG);
+            } else {
+                imageBuffer = spriteImage;
+            }
+        } catch (error) {
+            console.error('Error converting image to buffer:', error);
+            imageBuffer = spriteImage;
+        }
+
         return {
-            image: spriteImage,
-            data: armorData,
+            image: imageBuffer,
+            armorData: armorData,
             metadata: {
                 generated: new Date().toISOString(),
                 generator: 'ArmorGenerator',
@@ -1643,8 +1674,8 @@ class ArmorGenerator {
      * Apply material appearance
      */
     async applyMaterialAppearance(image, material, quality) {
-        const materialProps = this.materialProperties[material];
-        const qualityMods = this.qualityModifiers[quality];
+        const materialProps = this.materialProperties[material] || this.materialProperties[this.materials.IRON];
+        const qualityMods = this.qualityModifiers[quality] || this.qualityModifiers[this.qualities.COMMON];
 
         // Apply material color tint
         const tintColor = this.hexToRgb(materialProps.color);
@@ -1723,11 +1754,11 @@ class ArmorGenerator {
      * Generate armor ID
      */
     generateArmorId() {
-        return 'armor_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('armor');
     }
 
     /**
-     * Generate armor name
+     * Generate armor name (uses BaseGenerator.generateCompositeName)
      */
     generateArmorName(baseName, material, quality) {
         const materialNames = {
@@ -1749,19 +1780,22 @@ class ArmorGenerator {
             [this.materials.WOOD]: 'Wooden'
         };
 
-        const qualityNames = {
+        const qualityPrefixes = {
             [this.qualities.COMMON]: '',
-            [this.qualities.UNCOMMON]: 'Fine ',
-            [this.qualities.RARE]: 'Rare ',
-            [this.qualities.EPIC]: 'Epic ',
-            [this.qualities.LEGENDARY]: 'Legendary ',
-            [this.qualities.MYTHICAL]: 'Mythical '
+            [this.qualities.UNCOMMON]: 'Fine',
+            [this.qualities.RARE]: 'Rare',
+            [this.qualities.EPIC]: 'Epic',
+            [this.qualities.LEGENDARY]: 'Legendary',
+            [this.qualities.MYTHICAL]: 'Mythical'
         };
 
-        const materialName = materialNames[material] || '';
-        const qualityName = qualityNames[quality] || '';
-
-        return `${qualityName}${materialName} ${baseName}`.trim();
+        return this.generateCompositeName({
+            baseName: baseName,
+            material: material,
+            quality: quality,
+            materialNames: materialNames,
+            qualityPrefixes: qualityPrefixes
+        });
     }
 
     /**
@@ -1806,7 +1840,7 @@ class ArmorGenerator {
      * Generate appearance
      */
     generateAppearance(material, quality, enchanted) {
-        const materialProps = this.materialProperties[material];
+        const materialProps = this.materialProperties[material] || this.materialProperties[this.materials.IRON];
 
         return {
             primaryColor: materialProps.color,
@@ -1969,12 +2003,49 @@ class ArmorGenerator {
         const options = {};
 
         // Apply criteria
-        if (criteria.type) options.type = criteria.type;
+        if (criteria.type || criteria.preferredType) options.type = criteria.type || criteria.preferredType;
         if (criteria.subtype) options.subtype = criteria.subtype;
-        if (criteria.material) options.material = criteria.material;
+        if (criteria.material || criteria.preferredMaterial) options.material = criteria.material || criteria.preferredMaterial;
         if (criteria.quality) options.quality = criteria.quality;
         if (criteria.size) options.size = criteria.size;
         if (criteria.enchanted !== undefined) options.enchanted = criteria.enchanted;
+
+        // If value range is specified, try to match it
+        if (criteria.minValue !== undefined || criteria.maxValue !== undefined) {
+            const minValue = criteria.minValue || 0;
+            const maxValue = criteria.maxValue || Infinity;
+
+            let attempts = 0;
+            const maxAttempts = 50;
+
+            // Try different materials and qualities to match the value range
+            const materials = Object.values(this.materials);
+            const qualities = Object.values(this.qualities);
+
+            while (attempts < maxAttempts) {
+                // Vary material and quality to find a match
+                const testOptions = {
+                    ...options,
+                    material: options.material || this.selectRandom(materials),
+                    quality: options.quality || this.selectRandom(qualities)
+                };
+
+                const armor = await this.generate(testOptions);
+
+                if (armor.armorData.stats.value >= minValue && armor.armorData.stats.value <= maxValue) {
+                    return armor;
+                }
+
+                attempts++;
+            }
+
+            // If we couldn't find a match, return armor with medium settings
+            return await this.generate({
+                ...options,
+                material: this.materials.IRON,
+                quality: this.qualities.COMMON
+            });
+        }
 
         // Generate with criteria
         return await this.generate(options);
