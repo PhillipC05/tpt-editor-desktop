@@ -3,8 +3,14 @@
  * Specialized class for generating ambient sound environments
  */
 
-class AmbientGenerator {
+const BaseGenerator = require('./base-generator');
+
+class AmbientGenerator extends BaseGenerator {
     constructor(sampleRate = 44100, channels = 1, bitDepth = 16) {
+        super({
+            assetType: 'ambient_sound',
+            cacheSize: 50
+        });
         this.sampleRate = sampleRate;
         this.channels = channels;
         this.bitDepth = bitDepth;
