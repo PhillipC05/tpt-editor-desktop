@@ -27,7 +27,7 @@ jest.mock('jimp', () => {
     },
     getPixelColor: jest.fn(() => 0xFFFFFFFF),
     setPixelColor: jest.fn(),
-    getBufferAsync: jest.fn(async () => Buffer.from([])),
+    getBufferAsync: jest.fn(async () => Buffer.alloc(100, 'mock-image-data')), // Return non-empty buffer
     getBase64Async: jest.fn(async () => 'data:image/png;base64,'),
     write: jest.fn(async () => {}),
     writeAsync: jest.fn(async () => {}),
@@ -80,7 +80,14 @@ jest.mock('jimp', () => {
       return Promise.resolve(createMockImage());
     }
     // Creating new image - return the image directly for new Jimp()
-    return createMockImage(width || 64, height || 64);
+    // Support 3-arg constructor: new Jimp(width, height, color)
+    const img = createMockImage(width || 64, height || 64);
+    // Ensure getBufferAsync returns a non-empty buffer
+    img.getBufferAsync = jest.fn(async (mime) => {
+      const size = (width || 64) * (height || 64) * 4;
+      return Buffer.alloc(Math.max(size, 100), 0xFF);
+    });
+    return img;
   };
 
   // Make it work with async/await

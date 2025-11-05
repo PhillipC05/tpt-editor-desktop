@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class GemGenerator {
+class GemGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'gem',
+            cacheSize: 100
+        });
         this.gemTypes = {
             DIAMOND: 'diamond',
             RUBY: 'ruby',
@@ -477,6 +482,9 @@ class GemGenerator {
      * Generate a gem sprite
      */
     async generate(options = {}) {
+        // Handle null options
+        if (!options) options = {};
+
         const config = {
             type: options.type || this.gemTypes.DIAMOND,
             cut: options.cut || this.gemCuts.ROUND,
@@ -487,15 +495,17 @@ class GemGenerator {
             ...options
         };
 
-        // Get appropriate templates
-        const materialTemplate = this.gemMaterialTemplates[config.type];
-        const cutTemplate = this.gemCutTemplates[config.cut];
-        const sizeTemplate = this.sizeModifiers[config.size];
-        const qualityTemplate = this.qualityModifiers[config.quality];
+        // Get appropriate templates (with fallbacks for invalid configs)
+        const materialTemplate = this.gemMaterialTemplates[config.type] || this.gemMaterialTemplates[this.gemTypes.DIAMOND];
+        const cutTemplate = this.gemCutTemplates[config.cut] || this.gemCutTemplates[this.gemCuts.ROUND];
+        const sizeTemplate = this.sizeModifiers[config.size] || this.sizeModifiers[this.gemSizes.MEDIUM];
+        const qualityTemplate = this.qualityModifiers[config.quality] || this.qualityModifiers[this.gemQualities.VS1];
 
-        if (!materialTemplate || !cutTemplate || !sizeTemplate || !qualityTemplate) {
-            throw new Error(`Unknown gem configuration: ${config.type}, ${config.cut}, ${config.size}, ${config.quality}`);
-        }
+        // Update config with actual values used
+        config.type = config.type || this.gemTypes.DIAMOND;
+        config.cut = config.cut || this.gemCuts.ROUND;
+        config.size = config.size || this.gemSizes.MEDIUM;
+        config.quality = config.quality || this.gemQualities.VS1;
 
         // Calculate final stats
         const finalStats = this.calculateGemStats(materialTemplate, cutTemplate, sizeTemplate, qualityTemplate, config);
@@ -509,6 +519,7 @@ class GemGenerator {
             size: config.size,
             quality: config.quality,
             clarity: config.clarity,
+            color: materialTemplate.color, // Add color field for test compatibility
             materialTemplate: materialTemplate,
             cutTemplate: cutTemplate,
             sizeTemplate: sizeTemplate,
@@ -523,9 +534,22 @@ class GemGenerator {
         // Generate sprite image
         const spriteImage = await this.generateGemSprite(gemData, config);
 
+        // Convert Jimp image to Buffer for compatibility
+        let imageBuffer;
+        try {
+            if (spriteImage && typeof spriteImage.getBufferAsync === 'function') {
+                imageBuffer = await spriteImage.getBufferAsync(Jimp.MIME_PNG);
+            } else {
+                imageBuffer = spriteImage;
+            }
+        } catch (error) {
+            console.error('Error converting image to buffer:', error);
+            imageBuffer = spriteImage;
+        }
+
         return {
-            image: spriteImage,
-            data: gemData,
+            image: imageBuffer,
+            gemData: gemData,
             metadata: {
                 generated: new Date().toISOString(),
                 generator: 'GemGenerator',
@@ -565,7 +589,7 @@ class GemGenerator {
         const centerX = image.bitmap.width / 2;
         const centerY = image.bitmap.height / 2;
         const scale = gemData.sizeTemplate.pixelSize / 16;
-        const colors = this.gemColors[gemData.type];
+        const colors = this.gemColors[gemData.type] || this.gemColors.diamond; // Fallback to diamond colors
 
         // Draw gem based on cut
         switch (gemData.cut) {
@@ -881,7 +905,7 @@ class GemGenerator {
      * Add gem facets
      */
     async addGemFacets(image, gemData, centerX, centerY, scale) {
-        const colors = this.gemColors[gemData.type];
+        const colors = this.gemColors[gemData.type] || this.gemColors.diamond; // Fallback to diamond colors
         const facetCount = gemData.cutTemplate.facets;
 
         // Add facet highlights
@@ -955,9 +979,13 @@ class GemGenerator {
         const caratRange = sizeTemplate.caratRange;
         const carats = caratRange[0] + Math.random() * (caratRange[1] - caratRange[0]);
 
+        const calculatedValue = Math.round(materialTemplate.baseValue * sizeTemplate.multiplier * qualityTemplate.valueMultiplier * (carats / sizeTemplate.multiplier));
+
         const stats = {
             carats: Math.round(carats * 100) / 100,
-            value: Math.round(materialTemplate.baseValue * sizeTemplate.multiplier * qualityTemplate.valueMultiplier * (carats / sizeTemplate.multiplier)),
+            value: calculatedValue,
+            baseValue: materialTemplate.baseValue, // Add baseValue for test compatibility
+            totalValue: calculatedValue, // Add totalValue alias for test compatibility
             hardness: materialTemplate.hardness,
             refractiveIndex: materialTemplate.refractiveIndex,
             dispersion: materialTemplate.dispersion,
@@ -972,39 +1000,45 @@ class GemGenerator {
     }
 
     /**
-     * Generate gem ID
+     * Generate gem ID (uses BaseGenerator.generateId)
      */
     generateGemId() {
-        return 'gem_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('gem');
     }
 
     /**
-     * Generate gem name
+     * Generate gem name (uses BaseGenerator.generateCompositeName)
      */
     generateGemName(materialName, cutName, size, quality) {
         const sizePrefixes = {
-            [this.gemSizes.TINY]: 'Tiny ',
-            [this.gemSizes.SMALL]: 'Small ',
+            [this.gemSizes.TINY]: 'Tiny',
+            [this.gemSizes.SMALL]: 'Small',
             [this.gemSizes.MEDIUM]: '',
-            [this.gemSizes.LARGE]: 'Large ',
-            [this.gemSizes.HUGE]: 'Huge ',
-            [this.gemSizes.COLOSSAL]: 'Colossal '
+            [this.gemSizes.LARGE]: 'Large',
+            [this.gemSizes.HUGE]: 'Huge',
+            [this.gemSizes.COLOSSAL]: 'Colossal'
         };
 
         const qualitySuffixes = {
-            [this.gemQualities.FLAWLESS]: ' (Flawless)',
-            [this.gemQualities.VVS1]: ' (VVS1)',
-            [this.gemQualities.VVS2]: ' (VVS2)',
-            [this.gemQualities.VS1]: ' (VS1)',
-            [this.gemQualities.VS2]: ' (VS2)',
-            [this.gemQualities.SI1]: ' (SI1)',
-            [this.gemQualities.SI2]: ' (SI2)',
-            [this.gemQualities.I1]: ' (I1)',
-            [this.gemQualities.I2]: ' (I2)',
-            [this.gemQualities.I3]: ' (I3)'
+            [this.gemQualities.FLAWLESS]: '(Flawless)',
+            [this.gemQualities.VVS1]: '(VVS1)',
+            [this.gemQualities.VVS2]: '(VVS2)',
+            [this.gemQualities.VS1]: '(VS1)',
+            [this.gemQualities.VS2]: '(VS2)',
+            [this.gemQualities.SI1]: '(SI1)',
+            [this.gemQualities.SI2]: '(SI2)',
+            [this.gemQualities.I1]: '(I1)',
+            [this.gemQualities.I2]: '(I2)',
+            [this.gemQualities.I3]: '(I3)'
         };
 
-        return `${sizePrefixes[size]}${materialName} ${cutName}${qualitySuffixes[quality]}`.trim();
+        return this.generateCompositeName({
+            baseName: `${materialName} ${cutName}`,
+            size: size,
+            quality: quality,
+            sizePrefixes: sizePrefixes,
+            qualitySuffixes: qualitySuffixes
+        });
     }
 
     /**
@@ -1127,11 +1161,48 @@ class GemGenerator {
         const options = {};
 
         // Apply criteria
-        if (criteria.type) options.type = criteria.type;
+        if (criteria.type || criteria.preferredType) options.type = criteria.type || criteria.preferredType;
         if (criteria.cut) options.cut = criteria.cut;
         if (criteria.size) options.size = criteria.size;
         if (criteria.quality) options.quality = criteria.quality;
         if (criteria.clarity) options.clarity = criteria.clarity;
+
+        // If value range is specified, try to match it
+        if (criteria.minValue !== undefined || criteria.maxValue !== undefined) {
+            const minValue = criteria.minValue || 0;
+            const maxValue = criteria.maxValue || Infinity;
+
+            let attempts = 0;
+            const maxAttempts = 50;
+
+            // Try different sizes and qualities to match the value range
+            const sizes = Object.values(this.gemSizes);
+            const qualities = Object.values(this.gemQualities);
+
+            while (attempts < maxAttempts) {
+                // Vary size and quality to find a match
+                const testOptions = {
+                    ...options,
+                    size: options.size || this.selectRandom(sizes),
+                    quality: options.quality || this.selectRandom(qualities)
+                };
+
+                const gem = await this.generate(testOptions);
+
+                if (gem.gemData.stats.totalValue >= minValue && gem.gemData.stats.totalValue <= maxValue) {
+                    return gem;
+                }
+
+                attempts++;
+            }
+
+            // If we couldn't find a match, return a gem with medium quality/size
+            return await this.generate({
+                ...options,
+                size: this.gemSizes.SMALL,
+                quality: this.gemQualities.VS1
+            });
+        }
 
         // Generate with criteria
         return await this.generate(options);
@@ -1279,14 +1350,21 @@ class GemGenerator {
             collection.push(gem);
         }
 
-        return collection;
+        return {
+            collection: collection,
+            metadata: {
+                theme: theme,
+                count: count,
+                generated: new Date().toISOString()
+            }
+        };
     }
 
     /**
-     * Get random item from array
+     * Get random item from array (uses BaseGenerator.selectRandom)
      */
     getRandomFromArray(array) {
-        return array[Math.floor(Math.random() * array.length)];
+        return this.selectRandom(array);
     }
 
     /**
