@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class CarriageGenerator {
+class CarriageGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'carriage',
+            cacheSize: 50
+        });
         this.carriageTypes = {
             ROYAL: 'royal',
             STAGE: 'stage',
@@ -691,30 +696,36 @@ class CarriageGenerator {
      * Generate carriage ID
      */
     generateCarriageId() {
-        return 'carriage_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('carriage');
     }
 
     /**
-     * Generate carriage name
+     * Generate carriage name (uses BaseGenerator.generateCompositeName)
      */
     generateCarriageName(materialName, sizeTemplate, qualityTemplate) {
         const sizePrefixes = {
-            [this.carriageSizes.SMALL]: 'Small ',
+            [this.carriageSizes.SMALL]: 'Small',
             [this.carriageSizes.MEDIUM]: '',
-            [this.carriageSizes.LARGE]: 'Large ',
-            [this.carriageSizes.LUXURY]: 'Luxury '
+            [this.carriageSizes.LARGE]: 'Large',
+            [this.carriageSizes.LUXURY]: 'Luxury'
         };
 
         const qualityPrefixes = {
             [this.carriageQualities.COMMON]: '',
-            [this.carriageQualities.UNCOMMON]: 'Fine ',
-            [this.carriageQualities.RARE]: 'Rare ',
-            [this.carriageQualities.EPIC]: 'Epic ',
-            [this.carriageQualities.LEGENDARY]: 'Legendary ',
-            [this.carriageQualities.MYTHICAL]: 'Mythical '
+            [this.carriageQualities.UNCOMMON]: 'Fine',
+            [this.carriageQualities.RARE]: 'Rare',
+            [this.carriageQualities.EPIC]: 'Epic',
+            [this.carriageQualities.LEGENDARY]: 'Legendary',
+            [this.carriageQualities.MYTHICAL]: 'Mythical'
         };
 
-        return `${qualityPrefixes[qualityTemplate]}${sizePrefixes[sizeTemplate]}${materialName}`.trim();
+        return this.generateCompositeName({
+            baseName: materialName,
+            size: sizeTemplate,
+            quality: qualityTemplate,
+            sizePrefixes: sizePrefixes,
+            qualityPrefixes: qualityPrefixes
+        });
     }
 
     /**
