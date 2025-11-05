@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class AuraGenerator {
+class AuraGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'aura',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -57,7 +61,7 @@ class AuraGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('aura'),
             name: `${config.auraType.charAt(0).toUpperCase() + config.auraType.slice(1)} Aura`,
             type: 'aura',
             sprite: {
