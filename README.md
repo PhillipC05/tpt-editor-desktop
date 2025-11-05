@@ -178,23 +178,71 @@ const results = db.searchAssets('sword', 'audio', ['combat'], 20, 0);
 
 ## 🧪 Testing
 
-Run the comprehensive test suite:
+The project uses **Jest 29.7.0** for comprehensive test coverage with 280+ tests across multiple systems.
+
+### Quick Start
 
 ```bash
-# Audio tests
-node src/tests/audio-tests.js
-
-# All tests
+# Run all tests
 npm test
+
+# Run with coverage report
+npm run test:coverage
+
+# Run in watch mode (for development)
+npm run test:watch
+
+# Run specific test suites
+npm run test:core          # Error handling tests
+npm run test:generators    # Generator tests
+npm run test:audio         # Audio system tests
 ```
 
-Test coverage includes:
-- Audio generation algorithms
-- Export format validation
-- Playback compatibility
-- Parameter range validation
-- Performance benchmarks
-- Memory usage monitoring
+### Test Coverage
+
+| System | Tests | Status |
+|--------|-------|--------|
+| **Error Handling** | 83 | ✅ 100% Passing |
+| **Generators** | 113 | 🔄 32% Passing |
+| **Audio System** | 41 | 🔄 In Progress |
+| **Database** | 32 | 🔄 In Progress |
+| **Total** | **269** | **132 Passing** (49%) |
+
+### Test Organization
+
+```
+src/
+├── core/errors/__tests__/          # Error handling (83 tests) ✅
+├── generators/__tests__/           # Asset generators (113 tests)
+├── audio/__tests__/                # Audio system (41 tests)
+└── database/__tests__/             # Database operations (32 tests)
+
+test-utils/                         # Shared test utilities
+├── test-helpers.js                 # FileHelpers, RandomData, AsyncHelpers
+├── mock-factory.js                 # Mock creators
+└── index.js                        # Centralized exports
+```
+
+### Writing Tests
+
+See [TESTING.md](./TESTING.md) for comprehensive testing guide including:
+- Test structure and best practices
+- Available test utilities
+- Mocking strategies
+- Coverage goals
+- Contributing guidelines
+
+### Legacy Test System
+
+The project also includes a custom test framework for specialized tests:
+
+```bash
+# Legacy audio tests
+npm run test:legacy-audio
+
+# Legacy enhanced utilities tests
+npm run test:legacy-enhanced
+```
 
 ## 🔧 Development
 

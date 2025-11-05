@@ -2,9 +2,9 @@
  * Tests for GemGenerator
  */
 
-const { describe, it, expect, beforeEach } = require('@jest/globals');
+const { describe, it, expect, beforeEach, afterEach } = require('@jest/globals');
 const GemGenerator = require('../gem-generator');
-const { FileHelpers, MockData } = require('../../test-utils');
+const { FileHelpers, MockData } = require('../../../test-utils');
 
 describe('GemGenerator', () => {
   let generator;
