@@ -554,6 +554,153 @@ class BaseGenerator extends EventEmitter {
     }
 
     /**
+     * Generate unique ID with prefix
+     * @param {string} prefix - ID prefix (e.g., 'gem', 'coin', 'weapon')
+     * @returns {string} Unique ID
+     */
+    generateId(prefix = 'asset') {
+        return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    /**
+     * Select random element from array
+     * @param {Array} array - Array to select from
+     * @returns {*} Random element or null if array is empty
+     */
+    selectRandom(array) {
+        if (!array || array.length === 0) {
+            return null;
+        }
+        return array[Math.floor(Math.random() * array.length)];
+    }
+
+    /**
+     * Select element with weighted probability
+     * @param {Array} items - Array of {item, weight} objects
+     * @returns {*} Selected item
+     */
+    selectWeightedRandom(items) {
+        if (!items || items.length === 0) {
+            return null;
+        }
+
+        const totalWeight = items.reduce((sum, item) => sum + (item.weight || 1), 0);
+        let random = Math.random() * totalWeight;
+
+        for (const item of items) {
+            random -= (item.weight || 1);
+            if (random <= 0) {
+                return item.item;
+            }
+        }
+
+        return items[items.length - 1].item;
+    }
+
+    /**
+     * Apply quality multiplier to base stats
+     * @param {Object} baseStats - Base stat values
+     * @param {number} multiplier - Quality multiplier
+     * @returns {Object} Modified stats
+     */
+    applyQualityMultiplier(baseStats, multiplier = 1.0) {
+        const modifiedStats = {};
+
+        for (const [key, value] of Object.entries(baseStats)) {
+            if (typeof value === 'number') {
+                modifiedStats[key] = Math.round(value * multiplier * 100) / 100;
+            } else {
+                modifiedStats[key] = value;
+            }
+        }
+
+        return modifiedStats;
+    }
+
+    /**
+     * Convert hex color to RGB
+     * @param {string} hex - Hex color code (#RRGGBB)
+     * @returns {Object|null} RGB object {r, g, b} or null if invalid
+     */
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    /**
+     * Convert RGB to hex color
+     * @param {number} r - Red (0-255)
+     * @param {number} g - Green (0-255)
+     * @param {number} b - Blue (0-255)
+     * @returns {string} Hex color code
+     */
+    rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(x => {
+            const hex = Math.round(this.clamp(x, 0, 255)).toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        }).join('');
+    }
+
+    /**
+     * Apply variance to a base value
+     * @param {number} baseValue - Base value
+     * @param {number} variance - Variance percentage (0-1)
+     * @returns {number} Value with random variance
+     */
+    applyVariance(baseValue, variance = 0.1) {
+        const min = baseValue * (1 - variance);
+        const max = baseValue * (1 + variance);
+        return this.randomBetween(min, max);
+    }
+
+    /**
+     * Generate name from components
+     * @param {Object} options - Name generation options
+     * @returns {string} Generated name
+     */
+    generateCompositeName({
+        baseName,
+        quality,
+        material,
+        size,
+        qualityPrefixes = {},
+        qualitySuffixes = {},
+        sizePrefixes = {},
+        materialNames = {}
+    }) {
+        const parts = [];
+
+        // Add quality prefix
+        if (quality && qualityPrefixes[quality]) {
+            parts.push(qualityPrefixes[quality]);
+        }
+
+        // Add size prefix
+        if (size && sizePrefixes[size]) {
+            parts.push(sizePrefixes[size]);
+        }
+
+        // Add material
+        if (material) {
+            parts.push(materialNames[material] || material);
+        }
+
+        // Add base name
+        parts.push(baseName);
+
+        // Add quality suffix
+        if (quality && qualitySuffixes[quality]) {
+            parts.push(qualitySuffixes[quality]);
+        }
+
+        return parts.join(' ').replace(/\s+/g, ' ').trim();
+    }
+
+    /**
      * Clean up resources
      */
     async cleanup() {
