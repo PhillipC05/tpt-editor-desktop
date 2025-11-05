@@ -8,10 +8,14 @@ const lamejs = require('lamejs');
 const ogg = require('ogg.js');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class AudioGenerator {
+class AudioGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'audio',
+            cacheSize: 100
+        });
         this.sampleRate = 44100;
         this.bitDepth = 16;
         this.channels = 1; // Mono
@@ -32,7 +36,7 @@ class AudioGenerator {
         const wav = this.createWAVFile(audioData, this.sampleRate);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('sfx'),
             name: `${effectType.charAt(0).toUpperCase() + effectType.slice(1).replace(/_/g, ' ')} SFX`,
             type: 'sfx',
             audio: {
@@ -67,7 +71,7 @@ class AudioGenerator {
         const wav = this.createWAVFile(audioData, this.sampleRate);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('music'),
             name: `${style.charAt(0).toUpperCase() + style.slice(1)} Music`,
             type: 'music',
             audio: {
@@ -102,7 +106,7 @@ class AudioGenerator {
         const wav = this.createWAVFile(audioData, this.sampleRate);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('ambient'),
             name: `${type.charAt(0).toUpperCase() + type.slice(1)} Ambient`,
             type: 'ambient',
             audio: {
