@@ -6,10 +6,14 @@
 const { createCanvas } = require('canvas');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class VehicleGenerator {
+class VehicleGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'vehicle',
+            cacheSize: 50
+        });
         this.canvas = null;
         this.ctx = null;
     }
@@ -59,7 +63,7 @@ class VehicleGenerator {
         const buffer = this.canvas.toBuffer('image/png');
 
         return {
-            id: uuidv4(),
+            id: this.generateId('vehicle'),
             name: `${config.carType.charAt(0).toUpperCase() + config.carType.slice(1)} Car`,
             type: 'vehicle',
             sprite: {
