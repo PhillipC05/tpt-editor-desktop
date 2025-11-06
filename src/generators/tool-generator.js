@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class ToolGenerator {
+class ToolGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'tool',
+            cacheSize: 50
+        });
         this.toolTypes = {
             WORK: 'work',
             CRAFTING: 'crafting',
@@ -1676,7 +1681,7 @@ class ToolGenerator {
      * Generate tool ID
      */
     generateToolId() {
-        return 'tool_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('tool');
     }
 
     /**
