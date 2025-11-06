@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class AssetQualityEnhancer {
+class AssetQualityEnhancer extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'enhanced_asset',
+            cacheSize: 50
+        });
         this.utils = new SpriteUtils();
 
         // Quality enhancement settings
