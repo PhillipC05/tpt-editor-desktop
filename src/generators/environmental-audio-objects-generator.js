@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class EnvironmentalAudioObjectsGenerator {
+class EnvironmentalAudioObjectsGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'environmental_audio',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Environmental audio objects database
