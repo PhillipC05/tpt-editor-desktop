@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class GrassGenerator {
+class GrassGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'grass',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -54,7 +58,7 @@ class GrassGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('grass'),
             name: `${config.color || 'Green'} ${config.grassType.charAt(0).toUpperCase() + config.grassType.slice(1)} Grass`,
             type: 'grass',
             sprite: {
