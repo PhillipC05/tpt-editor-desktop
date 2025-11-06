@@ -5,9 +5,14 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class AnimationMetadataExporter {
+class AnimationMetadataExporter extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'animation_metadata',
+            cacheSize: 50
+        });
         this.exportFormats = {
             JSON: 'json',
             XML: 'xml',
