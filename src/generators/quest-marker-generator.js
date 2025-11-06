@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class QuestMarkerGenerator {
+class QuestMarkerGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'quest_marker',
+            cacheSize: 50
+        });
         this.markerTypes = {
             EXCLAMATION: 'exclamation',
             QUESTION: 'question',
@@ -1016,7 +1021,7 @@ class QuestMarkerGenerator {
      * Generate marker ID
      */
     generateMarkerId() {
-        return 'quest_marker_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('quest_marker');
     }
 
     /**

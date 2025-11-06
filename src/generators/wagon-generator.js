@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class WagonGenerator {
+class WagonGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'wagon',
+            cacheSize: 50
+        });
         this.wagonTypes = {
             MERCHANT: 'merchant',
             COVERED: 'covered',
@@ -626,7 +631,7 @@ class WagonGenerator {
      * Generate wagon ID
      */
     generateWagonId() {
-        return 'wagon_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('wagon');
     }
 
     /**

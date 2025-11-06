@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class ShopSignGenerator {
+class ShopSignGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'shop_sign',
+            cacheSize: 50
+        });
         this.shopTypes = {
             WEAPON_SHOP: 'weapon_shop',
             TAVERN: 'tavern',
@@ -804,7 +809,7 @@ class ShopSignGenerator {
      * Generate sign ID
      */
     generateSignId() {
-        return 'shop_sign_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('shop_sign');
     }
 
     /**

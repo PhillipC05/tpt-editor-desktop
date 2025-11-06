@@ -6,7 +6,7 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
 // Import specialized generators
 const CharacterGenerator = require('./sprite-generators/character-generator');
@@ -15,8 +15,12 @@ const ItemGenerator = require('./sprite-generators/item-generator');
 const TileGenerator = require('./sprite-generators/tile-generator');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
 
-class SpriteGenerator {
+class SpriteGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'sprite',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -50,7 +54,7 @@ class SpriteGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('character'),
             name: `${config.classType.charAt(0).toUpperCase() + config.classType.slice(1)} Character`,
             type: 'character',
             sprite: {
@@ -85,7 +89,7 @@ class SpriteGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('monster'),
             name: `${config.monsterType.charAt(0).toUpperCase() + config.monsterType.slice(1)} Monster`,
             type: 'monster',
             sprite: {
@@ -119,7 +123,7 @@ class SpriteGenerator {
         const rarityConfig = this.utils.getRarityConfig(config.rarity || 'common');
 
         return {
-            id: uuidv4(),
+            id: this.generateId('item'),
             name: `${rarityConfig.prefix} ${config.itemType.charAt(0).toUpperCase() + config.itemType.slice(1)}`,
             type: 'item',
             sprite: {
@@ -154,7 +158,7 @@ class SpriteGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('tile'),
             name: `${config.tileType.charAt(0).toUpperCase() + config.tileType.slice(1)} Tile`,
             type: 'tile',
             sprite: {
