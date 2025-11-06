@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class ScrollGenerator {
+class ScrollGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'scroll',
+            cacheSize: 50
+        });
         this.scrollTypes = {
             SPELL: 'spell',
             MAP: 'map',
@@ -645,7 +650,7 @@ class ScrollGenerator {
      * Generate scroll ID
      */
     generateScrollId() {
-        return 'scroll_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('scroll');
     }
 
     /**

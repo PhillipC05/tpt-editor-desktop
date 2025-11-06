@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class LanternGenerator {
+class LanternGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'lantern',
+            cacheSize: 50
+        });
         this.lanternTypes = {
             HANGING_LANTERN: 'hanging_lantern',
             PORTABLE_LANTERN: 'portable_lantern',
@@ -1053,7 +1058,7 @@ class LanternGenerator {
      * Generate lantern ID
      */
     generateLanternId() {
-        return 'lantern_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('lantern');
     }
 
     /**

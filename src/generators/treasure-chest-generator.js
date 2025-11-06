@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class TreasureChestGenerator {
+class TreasureChestGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'treasure_chest',
+            cacheSize: 50
+        });
         this.chestTypes = {
             WOODEN: 'wooden',
             METAL: 'metal',
@@ -657,7 +662,7 @@ class TreasureChestGenerator {
      * Generate chest ID
      */
     generateChestId() {
-        return 'chest_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('chest');
     }
 
     /**

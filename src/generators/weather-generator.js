@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class WeatherGenerator {
+class WeatherGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'weather',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Weather effect database

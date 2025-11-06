@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class PotionGenerator {
+class PotionGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'potion',
+            cacheSize: 50
+        });
         this.potionTypes = {
             HEALTH: 'health',
             MANA: 'mana',
@@ -776,7 +781,7 @@ class PotionGenerator {
      * Generate potion ID
      */
     generatePotionId() {
-        return 'potion_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('potion');
     }
 
     /**
