@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class FoodGenerator {
+class FoodGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'food',
+            cacheSize: 100
+        });
         this.foodTypes = {
             BREAD: 'bread',
             FRUITS: 'fruits',
@@ -1410,32 +1415,42 @@ class FoodGenerator {
      * Generate food ID
      */
     generateFoodId() {
-        return 'food_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('food');
     }
 
     /**
-     * Generate food name
+     * Generate food name (uses BaseGenerator.generateCompositeName)
      */
     generateFoodName(baseName, cookingState, quality) {
         const cookingPrefixes = {
-            [this.cookingStates.RAW]: 'Raw ',
-            [this.cookingStates.COOKED]: 'Cooked ',
-            [this.cookingStates.BURNT]: 'Burnt ',
+            [this.cookingStates.RAW]: 'Raw',
+            [this.cookingStates.COOKED]: 'Cooked',
+            [this.cookingStates.BURNT]: 'Burnt',
             [this.cookingStates.FRESH]: '',
-            [this.cookingStates.STALE]: 'Stale ',
-            [this.cookingStates.SPOILED]: 'Spoiled ',
-            [this.cookingStates.ROTTEN]: 'Rotten '
+            [this.cookingStates.STALE]: 'Stale',
+            [this.cookingStates.SPOILED]: 'Spoiled',
+            [this.cookingStates.ROTTEN]: 'Rotten'
         };
 
         const qualityPrefixes = {
-            [this.qualityLevels.POOR]: 'Poor Quality ',
+            [this.qualityLevels.POOR]: 'Poor Quality',
             [this.qualityLevels.COMMON]: '',
-            [this.qualityLevels.GOOD]: 'Good Quality ',
-            [this.qualityLevels.EXCELLENT]: 'Excellent Quality ',
-            [this.qualityLevels.PERFECT]: 'Perfect Quality '
+            [this.qualityLevels.GOOD]: 'Good Quality',
+            [this.qualityLevels.EXCELLENT]: 'Excellent Quality',
+            [this.qualityLevels.PERFECT]: 'Perfect Quality'
         };
 
-        return `${qualityPrefixes[quality]}${cookingPrefixes[cookingState]}${baseName}`.trim();
+        // Use cooking state as a custom prefix
+        const cookingPrefix = cookingPrefixes[cookingState] || '';
+        const qualityPrefix = qualityPrefixes[quality] || '';
+
+        // Build name with quality and cooking state
+        const parts = [];
+        if (qualityPrefix) parts.push(qualityPrefix);
+        if (cookingPrefix) parts.push(cookingPrefix);
+        parts.push(baseName);
+
+        return parts.join(' ').replace(/\s+/g, ' ').trim();
     }
 
     /**
