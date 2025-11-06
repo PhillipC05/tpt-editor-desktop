@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class PathGenerator {
+class PathGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'path',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -57,7 +61,7 @@ class PathGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('path'),
             name: `${config.pathType.charAt(0).toUpperCase() + config.pathType.slice(1)} Path`,
             type: 'path',
             sprite: {
