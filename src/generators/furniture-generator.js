@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class FurnitureGenerator {
+class FurnitureGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'furniture',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Furniture database
