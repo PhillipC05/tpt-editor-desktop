@@ -6,10 +6,14 @@
 const { createCanvas } = require('canvas');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class UIGenerator {
+class UIGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'ui',
+            cacheSize: 50
+        });
         this.canvas = null;
         this.ctx = null;
     }
@@ -73,7 +77,7 @@ class UIGenerator {
         const buffer = this.canvas.toBuffer('image/png');
 
         return {
-            id: uuidv4(),
+            id: this.generateId('ui'),
             name: `${config.elementType.charAt(0).toUpperCase() + config.elementType.slice(1)} UI Element`,
             type: 'ui',
             sprite: {
