@@ -6,10 +6,14 @@
 const { createCanvas } = require('canvas');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class ParticleGenerator {
+class ParticleGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'particle',
+            cacheSize: 50
+        });
         this.canvas = null;
         this.ctx = null;
     }
@@ -64,7 +68,7 @@ class ParticleGenerator {
         const buffer = this.canvas.toBuffer('image/png');
 
         return {
-            id: uuidv4(),
+            id: this.generateId('particle'),
             name: `${config.effectType.charAt(0).toUpperCase() + config.effectType.slice(1)} Effect`,
             type: 'particle',
             sprite: {
