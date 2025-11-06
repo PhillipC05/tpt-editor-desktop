@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class LevelGenerator {
+class LevelGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'level',
+            cacheSize: 10
+        });
         this.level = null;
         this.generators = {};
         this.config = {};
@@ -37,7 +41,7 @@ class LevelGenerator {
 
         // Initialize level data structure
         this.level = {
-            id: uuidv4(),
+            id: this.generateId('level'),
             name: config.name || this.generateLevelName(),
             type: this.config.levelType,
             theme: this.config.theme,
