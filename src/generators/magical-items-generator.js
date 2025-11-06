@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class MagicalItemsGenerator {
+class MagicalItemsGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'magical_items',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Magical items database

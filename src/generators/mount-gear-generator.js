@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class MountGearGenerator {
+class MountGearGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'mount_gear',
+            cacheSize: 50
+        });
         this.gearTypes = {
             SADDLE: 'saddle',
             BRIDLE: 'bridle',
@@ -789,7 +794,7 @@ class MountGearGenerator {
      * Generate gear ID
      */
     generateGearId() {
-        return 'mount_gear_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('mount_gear');
     }
 
     /**

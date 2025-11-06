@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class MythicalCreaturesGenerator {
+class MythicalCreaturesGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'mythical_creatures',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Mythical creatures database

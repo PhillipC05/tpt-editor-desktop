@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class ParticleAnimationGenerator {
+class ParticleAnimationGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'particle_animation',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Particle system database
