@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class SpellEffectGenerator {
+class SpellEffectGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'spell_effect',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -66,7 +70,7 @@ class SpellEffectGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('spell_effect'),
             name: `${config.effectType.charAt(0).toUpperCase() + config.effectType.slice(1)} Spell Effect`,
             type: 'spell_effect',
             sprite: {
