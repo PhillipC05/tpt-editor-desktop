@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const SpriteUtils = require('./sprite-generators/sprite-utils');
+const BaseGenerator = require('./base-generator');
 
-class RocksGenerator {
+class RocksGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'rocks',
+            cacheSize: 100
+        });
         this.utils = new SpriteUtils();
 
         // Boulder database

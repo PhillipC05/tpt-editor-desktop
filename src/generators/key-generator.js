@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class KeyGenerator {
+class KeyGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'key',
+            cacheSize: 50
+        });
         this.keyTypes = {
             DOOR: 'door',
             CHEST: 'chest',
@@ -716,7 +721,7 @@ class KeyGenerator {
      * Generate key ID
      */
     generateKeyId() {
-        return 'key_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('key');
     }
 
     /**

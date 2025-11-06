@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class TorchGenerator {
+class TorchGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'torch',
+            cacheSize: 50
+        });
         this.torchTypes = {
             WALL_TORCH: 'wall_torch',
             HANDHELD_TORCH: 'handheld_torch',
@@ -980,7 +985,7 @@ class TorchGenerator {
      * Generate torch ID
      */
     generateTorchId() {
-        return 'torch_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('torch');
     }
 
     /**

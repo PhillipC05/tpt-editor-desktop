@@ -5,9 +5,14 @@
 
 const Jimp = require('jimp');
 const path = require('path');
+const BaseGenerator = require('./base-generator');
 
-class RuneGenerator {
+class RuneGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'rune',
+            cacheSize: 50
+        });
         this.runeTypes = {
             ELEMENTAL: 'elemental',
             POWER: 'power',
@@ -808,7 +813,7 @@ class RuneGenerator {
      * Generate rune ID
      */
     generateRuneId() {
-        return 'rune_' + Math.random().toString(36).substr(2, 9);
+        return this.generateId('rune');
     }
 
     /**
