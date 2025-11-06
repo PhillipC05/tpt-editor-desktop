@@ -6,10 +6,14 @@
 const Jimp = require('jimp');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const BaseGenerator = require('./base-generator');
 
-class RuinGenerator {
+class RuinGenerator extends BaseGenerator {
     constructor() {
+        super({
+            assetType: 'ruin',
+            cacheSize: 50
+        });
         this.image = null;
         this.width = 0;
         this.height = 0;
@@ -54,7 +58,7 @@ class RuinGenerator {
         const buffer = await this.image.getBufferAsync(Jimp.MIME_PNG);
 
         return {
-            id: uuidv4(),
+            id: this.generateId('ruin'),
             name: `${config.ruinType.charAt(0).toUpperCase() + config.ruinType.slice(1)} Ruin`,
             type: 'ruin',
             sprite: {
